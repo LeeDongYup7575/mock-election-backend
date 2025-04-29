@@ -1,0 +1,142 @@
+package com.example.mockvoting.domain.user.service;
+
+import com.example.mockvoting.domain.user.dto.request.OAuth2Request;
+import com.example.mockvoting.domain.user.dto.response.TokenResponse;
+import com.example.mockvoting.domain.user.dto.response.UserResponse;
+import com.example.mockvoting.domain.user.entity.User;
+import com.example.mockvoting.domain.user.mapper.UserMapper;
+import com.example.mockvoting.exception.CustomException;
+import com.example.mockvoting.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserMapper userMapper;
+    private final JwtUtil jwtUtil;
+    private final GoogleService googleService;
+
+    /**
+     * 구글 로그인/회원가입 처리
+     */
+    @Transactional
+    public TokenResponse googleLogin(OAuth2Request request) {
+        // 구글 토큰 검증
+        Map<String, Object> googleUserInfo = googleService.verifyGoogleToken(request.getToken());
+
+        String googleId = (String) googleUserInfo.get("sub");
+        String email = (String) googleUserInfo.get("email");
+        String name = (String) googleUserInfo.get("name");
+        String pictureUrl = (String) googleUserInfo.get("pictureUrl");
+
+        // 이메일로 기존 사용자 찾기
+        Optional<User> existingUser = userMapper.findByEmail(email);
+
+        User user;
+        if (existingUser.isPresent()) {
+            // 기존 사용자 정보 업데이트
+            user = existingUser.get();
+
+            // 구글 ID가 없는 경우 (이메일로만 가입된 경우) 연결
+            if (user.getUserId() == null || !user.getUserId().equals(googleId)) {
+                user.setUserId(googleId);
+            }
+
+            // 프로필 이미지 업데이트 (구글 이미지가 있는 경우)
+            if (pictureUrl != null && !pictureUrl.isEmpty()) {
+                user.setProfileImgUrl(pictureUrl);
+            }
+
+            // 이름 업데이트
+            if (name != null && !name.isEmpty()) {
+                user.setName(name);
+            }
+
+            // 정보 업데이트
+            userMapper.updateUser(user);
+            log.info("기존 사용자 구글 로그인: {}", email);
+        } else {
+            // 신규 사용자 생성
+            user = User.builder()
+                    .userId(googleId)
+                    .email(email)
+                    .name(name)
+                    .nickname(name) // 기본적으로 이름을 닉네임으로 설정
+                    .profileImgUrl(pictureUrl != null ? pictureUrl : "/images/profiles/default-profile.png")
+                    .role("USER")
+                    .createdAt(LocalDateTime.now())
+                    .active(true)
+                    .isElection(false)
+                    .build();
+
+            userMapper.insertUser(user);
+            log.info("신규 구글 사용자 가입: {}", email);
+        }
+
+        // 회원 탈퇴한 사용자 체크
+        if (!user.isActive()) {
+            throw new CustomException("탈퇴한 사용자입니다.");
+        }
+
+        // JWT 토큰 생성
+        String token = jwtUtil.generateToken(user.getUserId(), user.getRole());
+
+        return TokenResponse.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .role(user.getRole())
+                .build();
+    }
+
+    /**
+     * 회원 탈퇴 처리
+     */
+    @Transactional
+    public void deleteUser(String userId) {
+        // 사용자 존재 여부 확인
+        Optional<User> userOpt = userMapper.findByUserId(userId);
+
+        if (userOpt.isEmpty()) {
+            throw new CustomException("존재하지 않는 사용자입니다.");
+        }
+
+        // 사용자 비활성화 (논리적 삭제)
+        userMapper.updateUserActiveStatus(userId, false);
+    }
+
+    /**
+     * 사용자 활성화 상태 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isActiveUser(String userId) {
+        Optional<User> userOpt = userMapper.findByUserId(userId);
+        return userOpt.map(User::isActive).orElse(false);
+    }
+
+    /**
+     * 사용자 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public Optional<UserResponse> getUserInfo(String userId) {
+        return userMapper.findByUserId(userId)
+                .map(user -> UserResponse.builder()
+                        .userId(user.getUserId())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .nickname(user.getNickname())
+                        .profileImgUrl(user.getProfileImgUrl())
+                        .role(user.getRole())
+                        .createdAt(user.getCreatedAt())
+                        .isElection(user.isElection())
+                        .build());
+    }
+}

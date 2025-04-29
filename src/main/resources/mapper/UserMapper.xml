@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.user.mapper.UserMapper">
+
+    <!-- 사용자 추가 -->
+    <insert id="insertUser" parameterType="com.example.mockvoting.domain.user.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (user_id, email, name, nickname, profile_img_url, role, created_at, active, is_election)
+        VALUES (#{userId}, #{email}, #{name}, #{nickname},  #{profileImgUrl}, #{role}, #{createdAt}, #{active}, #{isElection})
+    </insert>
+
+    <!-- 사용자ID로 사용자 조회 -->
+    <select id="findByUserId" parameterType="string" resultType="com.example.mockvoting.domain.user.entity.User">
+        SELECT id, user_id as userId, email, name, nickname, profile_img_url as profileImgUrl,
+                role, created_at as createdAt, active, is_election as isElection
+        FROM user
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 이메일로 사용자 조회 -->
+    <select id="findByEmail" parameterType="string" resultType="com.example.mockvoting.domain.user.entity.User">
+        SELECT id, user_id as userId, email, name, nickname, profile_img_url as profileImgUrl,
+               role, created_at as createdAt, active, is_election as isElection
+        FROM user
+        WHERE email = #{email}
+    </select>
+
+    <!-- 사용자 활성 상태 업데이트 (회원 탈퇴) -->
+    <update id="updateUserActiveStatus">
+        UPDATE user
+        SET active = #{active}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 사용자 정보 업데이트 -->
+    <update id="updateUser" parameterType="com.example.mockvoting.domain.user.entity.User">
+        UPDATE user
+        SET
+            name = #{name},
+            nickname = #{nickname},
+            email = #{email},
+            profile_img_url = #{profileImgUrl},
+            role = #{role},
+            active = #{active},
+            is_election = #{isElection}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>
