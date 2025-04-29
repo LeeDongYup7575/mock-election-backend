@@ -32,5 +32,26 @@ build/
 ### VS Code ###
 .vscode/
 
-## 환경변수 파일
-application.properties
+# 환경설정 파일
+*.env
+*.properties
+*.yml
+*.yaml
+src/main/resources/application.yml
+src/main/resources/application.properties
+
+# MyBatis XML 컴파일 결과물
+*.xml~
+
+# 업로드된 파일
+uploads/
+
+# Maven 관련 빌드 파일
+target/
+*.jar
+*.war
+*.ear
+
+mvnw
+mvnw.cmd
+.gitattributes
