@@ -39,6 +39,7 @@ build/
 *.yaml
 src/main/resources/application.yml
 src/main/resources/application.properties
+src/main/resources/gcs-key.json
 
 # MyBatis XML 컴파일 결과물
 *.xml~
