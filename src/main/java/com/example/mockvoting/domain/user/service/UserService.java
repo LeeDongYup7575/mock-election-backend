@@ -1,8 +1,8 @@
 package com.example.mockvoting.domain.user.service;
 
-import com.example.mockvoting.domain.user.dto.request.OAuth2Request;
-import com.example.mockvoting.domain.user.dto.response.TokenResponse;
-import com.example.mockvoting.domain.user.dto.response.UserResponse;
+import com.example.mockvoting.domain.user.dto.OAuth2RequestDTO;
+import com.example.mockvoting.domain.user.dto.TokenResponseDTO;
+import com.example.mockvoting.domain.user.dto.UserResponseDTO;
 import com.example.mockvoting.domain.user.entity.User;
 import com.example.mockvoting.domain.user.mapper.UserMapper;
 import com.example.mockvoting.exception.CustomException;
@@ -29,7 +29,7 @@ public class UserService {
      * 구글 로그인/회원가입 처리
      */
     @Transactional
-    public TokenResponse googleLogin(OAuth2Request request) {
+    public TokenResponseDTO googleLogin(OAuth2RequestDTO request) {
         // 구글 토큰 검증
         Map<String, Object> googleUserInfo = googleService.verifyGoogleToken(request.getToken());
 
@@ -90,7 +90,7 @@ public class UserService {
         // JWT 토큰 생성
         String token = jwtUtil.generateToken(user.getUserId(), user.getRole());
 
-        return TokenResponse.builder()
+        return TokenResponseDTO.builder()
                 .token(token)
                 .userId(user.getUserId())
                 .role(user.getRole())
@@ -126,9 +126,9 @@ public class UserService {
      * 사용자 정보 조회
      */
     @Transactional(readOnly = true)
-    public Optional<UserResponse> getUserInfo(String userId) {
+    public Optional<UserResponseDTO> getUserInfo(String userId) {
         return userMapper.findByUserId(userId)
-                .map(user -> UserResponse.builder()
+                .map(user -> UserResponseDTO.builder()
                         .userId(user.getUserId())
                         .email(user.getEmail())
                         .name(user.getName())

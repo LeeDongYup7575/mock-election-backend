@@ -1,6 +1,6 @@
 package com.example.mockvoting.exception;
 
-import com.example.mockvoting.domain.user.response.ApiResponse;
+import com.example.mockvoting.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

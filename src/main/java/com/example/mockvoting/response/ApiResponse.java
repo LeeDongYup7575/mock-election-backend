@@ -1,4 +1,4 @@
-package com.example.mockvoting.domain.user.response;
+package com.example.mockvoting.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

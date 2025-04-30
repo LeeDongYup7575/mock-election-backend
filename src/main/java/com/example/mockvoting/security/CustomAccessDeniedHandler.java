@@ -1,6 +1,6 @@
 package com.example.mockvoting.security;
 
-import com.example.mockvoting.domain.user.response.ApiResponse;
+import com.example.mockvoting.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

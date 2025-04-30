@@ -1,4 +1,4 @@
-package com.example.mockvoting.domain.user.dto.response;
+package com.example.mockvoting.domain.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenResponse {
+public class TokenResponseDTO {
     private String token;
     private String userId;
     private String role;

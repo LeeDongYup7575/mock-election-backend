@@ -1,4 +1,4 @@
-package com.example.mockvoting.domain.user.dto.response;
+package com.example.mockvoting.domain.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
+public class UserResponseDTO {
     private String userId;
     private String email;
     private String name;
