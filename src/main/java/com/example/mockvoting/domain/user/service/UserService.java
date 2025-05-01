@@ -70,7 +70,7 @@ public class UserService {
                     .userId(googleId)
                     .email(email)
                     .name(name)
-                    .nickname(name) // 기본적으로 이름을 닉네임으로 설정
+                    .nickname(name)
                     .profileImgUrl(pictureUrl != null ? pictureUrl : "/images/profiles/default-profile.png")
                     .role("USER")
                     .createdAt(LocalDateTime.now())
@@ -138,5 +138,25 @@ public class UserService {
                         .createdAt(user.getCreatedAt())
                         .isElection(user.isElection())
                         .build());
+    }
+
+    /**
+     * 사용자 투표 상태 업데이트
+     */
+    @Transactional
+    public UserResponseDTO updateElectionStatus(String userId, boolean status) {
+        // 사용자 존재 여부 확인
+        Optional<User> userOpt = userMapper.findByUserId(userId);
+
+        if (userOpt.isEmpty()) {
+            throw new CustomException("존재하지 않는 사용자입니다.");
+        }
+
+        // 투표 상태 업데이트
+        userMapper.updateUserElectionStatus(userId, status);
+
+        // 업데이트된 사용자 정보 반환
+        return getUserInfo(userId)
+                .orElseThrow(() -> new CustomException("사용자 정보를 찾을 수 없습니다."));
     }
 }

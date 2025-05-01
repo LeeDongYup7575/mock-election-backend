@@ -65,4 +65,19 @@ public class UserController {
         userService.deleteUser(userId);
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다.", null));
     }
+
+    /**
+     * 사용자 투표 상태 업데이트 API
+     */
+    @PatchMapping("/me/election-status")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateElectionStatus(
+            HttpServletRequest request,
+            @RequestParam(value = "status", defaultValue = "true") boolean status) {
+
+        String userId = (String) request.getAttribute("userId");
+        log.info("사용자 투표 상태 업데이트: {}, 상태: {}", userId, status);
+
+        UserResponseDTO updatedUser = userService.updateElectionStatus(userId, status);
+        return ResponseEntity.ok(ApiResponse.success("투표 상태가 업데이트되었습니다.", updatedUser));
+    }
 }
