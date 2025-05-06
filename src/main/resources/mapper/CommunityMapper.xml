@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.community.mapper.CommunityMapper">
+    <!-- 게시글 카테고리 전체 조회 -->
+    <select id="selectAllCategories" resultType="com.example.mockvoting.domain.community.dto.CategoryResponseDTO">
+        SELECT
+            id,
+            code,
+            name,
+            description,
+            is_anonymous
+        FROM category
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 카테고리별 게시글 조회 -->
+    <select id="selectPostsByCategory" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.author_id,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE category.code = #{categoryCode}
+          AND post.is_deleted = 0
+        ORDER BY post.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 카테고리별 게시글 개수 조회 -->
+    <select id="selectPostCountByCategory" resultType="int">
+        SELECT COUNT(*)
+        FROM post
+                 JOIN category ON post.category_id = category.id
+        WHERE category.code = #{categoryCode}
+          AND post.is_deleted = 0
+    </select>
+
+</mapper>
