@@ -5,7 +5,7 @@
     <select id="findCandidatesBySgId" resultType="com.example.mockvoting.domain.candidate.entity.Candidate">
         select *
         from candidate
-        where sg_id = #{sgId}
+        where sg_id = #{sgId} and status = '등록'
     </select>
 
 </mapper>
