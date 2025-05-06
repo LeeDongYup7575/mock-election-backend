@@ -1,6 +1,7 @@
 package com.example.mockvoting.domain.community.controller;
 
 import com.example.mockvoting.domain.community.dto.CategoryResponseDTO;
+import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
 import com.example.mockvoting.domain.community.service.CommunityService;
 import com.example.mockvoting.response.ApiResponse;
@@ -58,4 +59,23 @@ public class CommunityController {
                     .body(ApiResponse.error("게시글 목록 조회 실패"));
         }
     }
+
+    /**
+     *  게시글 상세 조회
+     */
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<ApiResponse<PostDetailResponseDTO>> getPostDetail(@PathVariable Integer id) {
+        log.info("게시글 [{}] 상세 조회 요청", id);
+
+        try {
+            PostDetailResponseDTO post = communityService.getPostDetail(id);
+            log.info("게시글 [{}] 상세 조회 성공", id);
+            return ResponseEntity.ok(ApiResponse.success("게시글 상세 조회 성공", post));
+        } catch (Exception e) {
+            log.error("게시글 [{}] 상세 조회 중 오류 발생", id, e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("게시글 상세 조회 실패"));
+        }
+    }
+
 }

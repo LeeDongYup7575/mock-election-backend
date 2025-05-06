@@ -1,6 +1,7 @@
 package com.example.mockvoting.domain.community.service;
 
 import com.example.mockvoting.domain.community.dto.CategoryResponseDTO;
+import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
 import com.example.mockvoting.domain.community.mapper.CommunityMapper;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,10 @@ public class CommunityService {
         return new PageImpl<>(posts, pageable, total);
     }
 
-
+    /**
+     *  게시글 상세 조회
+     */
+    public PostDetailResponseDTO getPostDetail(Integer id) {
+        return communityMapper.selectPostDetailById(id);
+    }
 }
