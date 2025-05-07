@@ -51,7 +51,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         // 인증이 필요 없는 경로는 바로 통과 (예: 구글 로그인만 제외)
         String path = request.getServletPath();
-        if (path.startsWith("/api/users/oauth2/")) {
+        String method = request.getMethod();
+        if (path.startsWith("/api/users/oauth2/")||
+                path.startsWith("/api/community/categories")||
+                (path.startsWith("/api/community/posts") && method.equals("GET"))
+        ) {
             filterChain.doFilter(request, response);
             return;
         }
