@@ -22,4 +22,7 @@ public interface UserMapper {
 
     // 사용자 정보 업데이트
     void updateUser(User user);
+
+    // 사용자 투표 상태 업데이트
+    void updateUserElectionStatus(@Param("userId") String userId, @Param("isElection") boolean isElection);
 }

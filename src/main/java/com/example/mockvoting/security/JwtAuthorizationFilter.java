@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,9 +38,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         // OPTIONS 요청은 바로 통과
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
+        if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+            log.debug("OPTIONS 요청 통과: {}", request.getRequestURI());
+            response.setStatus(HttpStatus.OK.value());
+            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "*");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setHeader("Access-Control-Max-Age", "3600");
+            return; // 필터 체인을 계속 진행하지 않고 즉시 응답
         }
 
         // 인증이 필요 없는 경로는 바로 통과 (예: 구글 로그인만 제외)
@@ -92,23 +99,25 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 } else {
                     log.warn("유효하지 않은 JWT 토큰");
                     setErrorResponse(response, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다.");
-                    return; // 필터 체인 중단
                 }
             } else {
-                log.debug("JWT 토큰이 없음");
+                log.debug("JWT 토큰이 없음: {}", path);
                 setErrorResponse(response, HttpStatus.UNAUTHORIZED, "인증 토큰이 없습니다.");
-                return; // 필터 체인 중단
             }
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생", e);
             setErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "인증 처리 중 오류가 발생했습니다.");
-            return; // 필터 체인 중단
         }
     }
 
     private void setErrorResponse(HttpServletResponse response, HttpStatus status, String message) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        // Add CORS headers to error responses too
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "*");
 
         Map<String, Object> body = new HashMap<>();
         body.put("status", status.value());

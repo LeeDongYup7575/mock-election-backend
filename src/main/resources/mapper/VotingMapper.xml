@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.voting.mapper.VotingMapper">
+
+    <!-- 특정 선거 정보 조회 -->
+    <select id="getElectionById" parameterType="string" resultType="com.example.mockvoting.domain.voting.dto.VotingCardDTO">
+        SELECT
+            sg_id as sgId, title, date, description
+        FROM
+            election
+        WHERE
+            sg_id = #{sgId}
+    </select>
+
+    <!-- 모든 정당 정책 조회 -->
+    <select id="getPartyPoliciesBySgId" parameterType="string" resultType="com.example.mockvoting.domain.voting.dto.PartyPolicyDTO">
+        SELECT
+            id, sg_id as sgId, party_name as partyName,
+            prms_ord as prmsOrd, realm_name as realmName,
+            title, content
+        FROM
+            party_policy
+        WHERE
+            sg_id = #{sgId}
+    </select>
+
+    <!-- 정당 이름 조회 -->
+    <select id="getDistinctPartyNamesBySgId" parameterType="string" resultType="string">
+        SELECT DISTINCT
+            party_name
+        FROM
+            party_policy
+        WHERE
+            sg_id = #{sgId}
+    </select>
+
+    <!-- 특정 선거의 총 투표 수 조회 -->
+    <select id="countBySgId" parameterType="string" resultType="int">
+        SELECT
+            SUM(vote_count)
+        FROM
+            voting_stats
+        WHERE
+            sg_id = #{sgId}
+    </select>
+
+    <!-- 특정 선거의 후보자별 투표 수 조회 -->
+    <select id="getVotingStatsBySgId" parameterType="string" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">
+        SELECT
+            id, sg_id as sgId, candidate_id as candidateId,
+            vote_count as voteCount, percentage
+        FROM
+            voting_stats
+        WHERE
+            sg_id = #{sgId}
+    </select>
+
+    <!-- 특정 후보의 투표 통계 조회 - 이 메서드가 없어서 오류 발생 -->
+    <select id="getVotingStatsByCandidateId" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">
+        SELECT
+            id, sg_id as sgId, candidate_id as candidateId,
+            vote_count as voteCount, percentage
+        FROM
+            voting_stats
+        WHERE
+            sg_id = #{sgId} AND candidate_id = #{candidateId}
+    </select>
+
+    <!-- 새로운 투표 통계 삽입 -->
+    <insert id="insertVotingStats" parameterType="com.example.mockvoting.domain.voting.entity.VotingStats">
+        INSERT INTO voting_stats (
+            sg_id, candidate_id, vote_count, percentage
+        ) VALUES (
+                     #{sgId}, #{candidateId}, #{voteCount}, #{percentage}
+                 )
+    </insert>
+
+    <!-- 특정 후보의 투표 수 원자적 증가 -->
+    <update id="incrementVoteCount">
+        UPDATE voting_stats
+        SET vote_count = vote_count + 1
+        WHERE sg_id = #{sgId} AND candidate_id = #{candidateId}
+    </update>
+
+    <!-- 모든 후보의 백분율 원자적 업데이트 -->
+    <update id="updateAllPercentages">
+        UPDATE voting_stats vs
+        SET percentage = (vs.vote_count * 100.0 / (
+            SELECT SUM(vote_count) FROM voting_stats WHERE sg_id = #{sgId}
+        ))
+        WHERE vs.sg_id = #{sgId}
+    </update>
+
+    <!-- 활성화된 모든 투표 ID 조회 (스케줄링용) -->
+    <select id="findAllActiveVotingIds" resultType="string">
+        SELECT DISTINCT sg_id
+        FROM election
+        WHERE is_active = true
+    </select>
+</mapper>

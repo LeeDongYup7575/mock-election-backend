@@ -17,7 +17,6 @@ public class User {
     private String email;           // 이메일 (구글 이메일)
     private String name;            // 이름 (구글 displayName)
     private String nickname;        // 사용자 닉네임 (추가 입력 받음)
-    private String password;        // 비밀번호 (자체 로그인용, 해시)
     private String profileImgUrl;   // 프로필 이미지 URL
     private String role;            // 사용자 역할 (USER, ADMIN)
     private LocalDateTime createdAt; // 가입일
