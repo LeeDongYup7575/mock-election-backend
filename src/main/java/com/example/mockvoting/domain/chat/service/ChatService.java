@@ -1,0 +1,40 @@
+package com.example.mockvoting.domain.chat.service;
+
+import com.example.mockvoting.domain.chat.entity.ChatMessage;
+import com.example.mockvoting.domain.chat.repository.ChatMessageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Collections;
+
+@Service
+public class ChatService {
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
+
+    // 메시지 저장
+    public ChatMessage saveMessage(ChatMessage chatMessage) {
+        return chatMessageRepository.save(chatMessage);
+    }
+
+    // 채팅 기록 조회 (최근 50개)
+    public List<ChatMessage> getChatHistory(int chatroomId) {
+        List<ChatMessage> messages = chatMessageRepository.findTop50ByChatroomIdOrderBySentAtDesc(chatroomId);  // 메서드 호출 시 chatroomId 사용
+        Collections.reverse(messages); // 시간순 정렬
+        return messages;
+    }
+
+        // Perspective API를 이용한 비속어 필터링 (간단한 예시)
+    public boolean isProfanity(String content) {
+        // 실제로는 Perspective API에 요청하는 코드가 필요
+        // 간단한 예시로 몇 가지 비속어 체크
+        String[] badWords = {"비속어1", "비속어2", "비속어3"};
+        for (String word : badWords) {
+            if (content.contains(word)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
