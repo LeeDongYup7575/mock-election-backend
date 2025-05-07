@@ -1,7 +1,6 @@
 package com.example.mockvoting.domain.community.mapper;
 
 import com.example.mockvoting.domain.community.dto.CategoryResponseDTO;
-import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -9,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
-public interface CommunityMapper {
+public interface CategoryMapper {
     // 게시글 카테고리 전체 조회
     List<CategoryResponseDTO> selectAllCategories();
 
@@ -21,6 +20,4 @@ public interface CommunityMapper {
     // 카테고리별 게시글 개수 조회
     int selectPostCountByCategory(@Param("categoryCode") String categoryCode);
 
-    // 게시글 상세 조회
-    PostDetailResponseDTO selectPostDetailById(@Param("id") Integer id);
 }

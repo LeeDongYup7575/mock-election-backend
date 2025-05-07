@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.mockvoting.domain.community.mapper.CommunityMapper">
+<mapper namespace="com.example.mockvoting.domain.community.mapper.CategoryMapper">
+
     <!-- 게시글 카테고리 전체 조회 -->
     <select id="selectAllCategories" resultType="com.example.mockvoting.domain.community.dto.CategoryResponseDTO">
         SELECT
@@ -32,7 +33,7 @@
         WHERE category.code = #{categoryCode}
           AND post.is_deleted = 0
         ORDER BY post.created_at DESC
-        LIMIT #{limit} OFFSET #{offset}
+            LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <!-- 카테고리별 게시글 개수 조회 -->
@@ -42,27 +43,6 @@
                  JOIN category ON post.category_id = category.id
         WHERE category.code = #{categoryCode}
           AND post.is_deleted = 0
-    </select>
-
-    <!-- 게시글 상세 조회 -->
-    <select id="selectPostDetailById" resultType="com.example.mockvoting.domain.community.dto.PostDetailResponseDTO">
-        SELECT
-            post.id,
-            post.category_id,
-            post.title,
-            post.content,
-            post.author_id,
-            (post.upvotes - post.downvotes) AS vote_count,
-            post.views,
-            post.created_at,
-            post.updated_at,
-            category.code AS category_code,
-            category.name AS category_name,
-            user.nickname AS author_nickname
-        FROM post
-                 LEFT JOIN category ON post.category_id = category.id
-                 LEFT JOIN user ON post.author_id = user.user_id
-        WHERE post.id = #{id}
     </select>
 
 </mapper>
