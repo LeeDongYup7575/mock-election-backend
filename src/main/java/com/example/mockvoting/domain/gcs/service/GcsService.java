@@ -22,24 +22,24 @@ public class GcsService {
 
     private final Storage storage;
 
-    private String resolvePath(String category, String fileName) {
+    private String resolvePath(String type, String fileName) {
         String prefix;
-        switch (category) {
+        switch (type) {
             case "profiles": prefix = profilesPath; break;
             case "post_images": prefix = postImagesPath; break;
             case "post_attachments": prefix = postAttachmentsPath; break;
             case "feed_images": prefix = feedImagesPath; break;
             default:
-                log.warn("잘못된 파일 카테고리 요청: {}", category);
-                throw new IllegalArgumentException("유효하지 않은 파일 카테고리입니다: " + category);
+                log.warn("잘못된 파일 카테고리 요청: {}", type);
+                throw new IllegalArgumentException("유효하지 않은 파일 카테고리입니다: " + type);
         }
         return prefix + "/" + fileName;
     }
 
-    public void upload(MultipartFile file, String category) {
+    public String upload(String type, MultipartFile file) {
         try {
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            String fullPath = resolvePath(category, fileName);
+            String fullPath = resolvePath(type, fileName);
 
             BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fullPath)
                     .setContentType(file.getContentType())
@@ -47,6 +47,7 @@ public class GcsService {
 
             storage.create(blobInfo, file.getBytes());
             log.info("파일 업로드 성공: {}", fullPath);
+            return String.format("https://storage.googleapis.com/%s/%s", bucketName, fullPath);
         } catch (IOException e) {
             log.error("파일 업로드 중 IOException 발생", e);
             throw new RuntimeException("파일 업로드에 실패했습니다.");
@@ -56,9 +57,9 @@ public class GcsService {
         }
     }
 
-    public byte[] download(String category, String fileName) {
+    public byte[] download(String type, String fileName) {
         try {
-            String fullPath = resolvePath(category, fileName);
+            String fullPath = resolvePath(type, fileName);
             BlobId blobId = BlobId.of(bucketName, fullPath);
             Blob target = storage.get(blobId);
 
@@ -79,9 +80,9 @@ public class GcsService {
         }
     }
 
-    public void delete(String category, String fileName) {
+    public void delete(String type, String fileName) {
         try {
-            String fullPath = resolvePath(category, fileName);
+            String fullPath = resolvePath(type, fileName);
             BlobId blobId = BlobId.of(bucketName, fullPath);
             boolean deleted = storage.delete(blobId);
 
