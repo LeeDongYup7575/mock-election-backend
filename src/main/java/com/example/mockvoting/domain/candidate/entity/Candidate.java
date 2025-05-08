@@ -20,5 +20,6 @@ public class Candidate {
     private String edu;
     private String career1;
     private String career2;
+    private String profileUrl;
 
 }

@@ -26,7 +26,6 @@ public class CandidateController {
     @GetMapping("/detail")
     public ResponseEntity<List<Policy>> getCandidateDetail(@RequestParam String sgId, @RequestParam String partyName) {
         List<Policy> policy = candidateService.getPolicy(sgId,partyName);
-        System.out.println("정당이름 : " + partyName);
         return ResponseEntity.ok(policy);
     }
 }
