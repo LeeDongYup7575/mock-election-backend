@@ -45,6 +45,8 @@ public class UserService {
         Optional<User> existingUser = userMapper.findByEmail(email);
 
         User user;
+        boolean isNewUser = false;
+
         if (existingUser.isPresent()) {
             // 기존 사용자 정보 업데이트
             user = existingUser.get();
@@ -54,14 +56,20 @@ public class UserService {
                 user.setUserId(googleId);
             }
 
-            // 프로필 이미지 업데이트 (구글 이미지가 있는 경우)
-            if (pictureUrl != null && !pictureUrl.isEmpty()) {
-                user.setProfileImgUrl(pictureUrl);
-            }
-
-            // 이름 업데이트
+            // 이름 업데이트 (이름은 구글에서 변경될 수 있으므로 동기화)
             if (name != null && !name.isEmpty()) {
                 user.setName(name);
+            }
+
+            // 프로필 이미지 업데이트 - 중요: 사용자가 커스텀 프로필 이미지를 설정한 경우에는 덮어쓰지 않음
+            // 기본 이미지인 경우나 구글 이미지인 경우(URL에 googleusercontent.com이 포함된 경우)에만 업데이트
+            String currentProfileUrl = user.getProfileImgUrl();
+            boolean isDefaultOrGoogleImage = currentProfileUrl == null ||
+                    currentProfileUrl.contains("/images/profiles/default-profile.png") ||
+                    currentProfileUrl.contains("googleusercontent.com");
+
+            if (pictureUrl != null && !pictureUrl.isEmpty() && isDefaultOrGoogleImage) {
+                user.setProfileImgUrl(pictureUrl);
             }
 
             // 정보 업데이트
@@ -69,6 +77,7 @@ public class UserService {
             log.info("기존 사용자 구글 로그인: {}", email);
         } else {
             // 신규 사용자 생성
+            isNewUser = true;
             user = User.builder()
                     .userId(googleId)
                     .email(email)
@@ -97,6 +106,10 @@ public class UserService {
                 .token(token)
                 .userId(user.getUserId())
                 .role(user.getRole())
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .profileImgUrl(user.getProfileImgUrl())
                 .build();
     }
 
