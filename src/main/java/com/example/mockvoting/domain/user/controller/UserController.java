@@ -8,10 +8,12 @@ import com.example.mockvoting.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -53,6 +55,26 @@ public class UserController {
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.error("사용자 정보를 찾을 수 없습니다.")));
     }
+
+    /**
+     * 사용자 정보 수정 API
+     * multipart/form-data 로 이메일, 이름, 닉네임, 프로필이미지 수신
+     */
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateMyInfo(
+            HttpServletRequest request,
+            @RequestPart("nickname") String nickname,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        String userId = (String) request.getAttribute("userId");
+        log.info("사용자 닉네임/프로필 수정 요청: {}, nickname={}", userId, nickname);
+
+        UserResponseDTO updatedUser =
+                userService.updateNicknameAndProfile(userId, nickname, profileImage);
+
+        return ResponseEntity.ok(ApiResponse.success("닉네임 및 프로필이 수정되었습니다.", updatedUser));
+    }
+
 
     /**
      * 회원 탈퇴 API
