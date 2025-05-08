@@ -52,6 +52,12 @@ public class PostService {
     @Transactional
     public Long save(PostCreateRequestDTO dto) {
         Post post = postDtoMapper.toEntity(dto);
+
+        // 썸네일이 없으면 기본 이미지 경로로 설정
+        if (post.getThumbnailUrl() == null || post.getThumbnailUrl().isBlank()) {
+            post.setThumbnailUrl("https://storage.googleapis.com/visionvote_uploads/post/images/default_thumnail.jpg");
+        }
+
         return postRepository.save(post).getId();
     }
 }
