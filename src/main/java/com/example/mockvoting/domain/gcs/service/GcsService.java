@@ -38,8 +38,12 @@ public class GcsService {
 
     public String upload(String type, MultipartFile file) {
         try {
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            String fullPath = resolvePath(type, fileName);
+            String originalName = file.getOriginalFilename();
+            String uuid = UUID.randomUUID().toString();
+
+            String extension = originalName.substring(originalName.lastIndexOf('.'));
+            String safeFileName = uuid + extension;
+            String fullPath = resolvePath(type, safeFileName);
 
             BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fullPath)
                     .setContentType(file.getContentType())
