@@ -156,6 +156,13 @@
 			<version>2.44.0</version>
 		</dependency>
 
+		<!-- MapStruct core -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>1.5.5.Final</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -186,6 +193,11 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.5.5.Final</version>
 						</path>
 						<!-- 다른 어노테이션 프로세서가 있다면 여기에 추가 -->
 					</annotationProcessorPaths>
