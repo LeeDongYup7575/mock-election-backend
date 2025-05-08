@@ -6,21 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "chat_messages")
-public class ChatMessageDTO {
-
+@Document(collection = "unread_count")
+public class UnreadCountDTO {
     private int id;
-    private String type;
-    private String content;
-    private Date sentAt;
-    private int chatroomId;
+    private int messageId;
     private String userId;
-    private String sender_nickname;
-
+    private int chatroomId;
 }
