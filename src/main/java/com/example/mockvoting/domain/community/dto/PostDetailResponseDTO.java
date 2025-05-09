@@ -27,4 +27,5 @@ public class PostDetailResponseDTO {
     private String categoryName;
     private String authorNickname;
     private List<PostAttachmentResponseDTO> attachments;
+    private Integer commentCount;
 }

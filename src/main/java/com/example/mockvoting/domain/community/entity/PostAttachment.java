@@ -36,7 +36,7 @@ public class PostAttachment {
     private LocalDateTime createdAt;
 
     @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
+    private boolean deleted = false;
 
     @PrePersist
     protected void onCreate() {
