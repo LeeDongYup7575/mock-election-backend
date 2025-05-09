@@ -44,7 +44,7 @@
             private_key = #{privateKey},
         </if>
         token_balance = #{tokenBalance},
-        updated_at = #{updatedAt}
+        updated_at = NOW()
         WHERE user_id = #{userId}
     </update>
 

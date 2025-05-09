@@ -28,4 +28,7 @@ public interface UserMapper {
 
     // 사용자 투표 상태 업데이트
     void updateUserElectionStatus(@Param("userId") String userId, @Param("isElection") boolean isElection);
+
+    // 사용자 토큰 발급 상태 업데이트
+    void updateUserTokenStatus(@Param("userId") String userId, @Param("hasReceivedToken") boolean hasReceivedToken);
 }

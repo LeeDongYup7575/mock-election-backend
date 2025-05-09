@@ -7,12 +7,14 @@ import com.example.mockvoting.domain.voting.dto.VotingStatsDTO;
 import com.example.mockvoting.domain.voting.service.VotingService;
 import com.example.mockvoting.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/votings")
@@ -79,14 +81,30 @@ public class VotingController {
     /**
      * 사용자 투표 상태 확인 API
      */
+    /**
+     * 사용자 투표 상태 확인 API
+     */
     @GetMapping("/{sgId}/status")
     public ResponseEntity<ApiResponse<Boolean>> checkVotingStatus(
             @PathVariable String sgId,
             HttpServletRequest request) {
+        try {
+            String userId = (String) request.getAttribute("userId");
+            log.info("투표 상태 확인 요청: 사용자={}, 선거ID={}", userId, sgId);
 
-        String userId = (String) request.getAttribute("userId");
-        boolean hasVoted = votingService.hasUserVoted(userId, sgId);
+            if (userId == null || userId.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("인증이 필요합니다."));
+            }
 
-        return ResponseEntity.ok(ApiResponse.success(hasVoted));
+            boolean hasVoted = votingService.hasUserVoted(userId, sgId);
+            log.info("투표 상태 확인 결과: 사용자={}, 선거ID={}, 투표여부={}", userId, sgId, hasVoted);
+
+            return ResponseEntity.ok(ApiResponse.success(hasVoted));
+        } catch (Exception e) {
+            log.error("투표 상태 확인 중 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("투표 상태 확인 중 오류가 발생했습니다."));
+        }
     }
 }

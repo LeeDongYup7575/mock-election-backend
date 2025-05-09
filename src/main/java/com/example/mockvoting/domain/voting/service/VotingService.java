@@ -3,10 +3,13 @@ package com.example.mockvoting.domain.voting.service;
 import com.example.mockvoting.domain.voting.dto.VotingCardDTO;
 import com.example.mockvoting.domain.voting.dto.PartyPolicyDTO;
 import com.example.mockvoting.domain.voting.dto.VotingStatsDTO;
+import com.example.mockvoting.domain.voting.entity.VoteHistory;
 import com.example.mockvoting.domain.voting.entity.VotingStats;
+import com.example.mockvoting.domain.voting.mapper.VoteHistoryMapper;
 import com.example.mockvoting.domain.voting.mapper.VotingMapper;
 import com.example.mockvoting.domain.user.entity.User;
 import com.example.mockvoting.domain.user.mapper.UserMapper;
+import com.example.mockvoting.domain.wallet.service.WalletService;
 import com.example.mockvoting.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +30,8 @@ public class VotingService {
 
     private final VotingMapper votingMapper;
     private final UserMapper userMapper;
+    private final VoteHistoryMapper voteHistoryMapper;
+    private final WalletService walletService;
 
     /**
      * 특정 투표 정보 조회
@@ -52,11 +58,27 @@ public class VotingService {
      * 사용자 투표 제출 및 통계 계산
      * - 원자적 업데이트를 사용하여 동시성 문제 해결
      */
+    /**
+     * 사용자 투표 제출 및 통계 계산 (토큰 차감 로직 추가)
+     */
     @Transactional
     public VotingStatsDTO submitVoting(String sgId, Integer candidateId, String userId) {
-        // 이미 투표했는지 확인
-        if (hasUserVoted(userId, sgId)) {
-            throw new CustomException("이미 투표에 참여하셨습니다.");
+        // 이미 해당 선거에 투표했는지 확인
+        if (hasUserVotedForElection(userId, sgId)) {
+            throw new CustomException("이미 해당 선거에 투표하셨습니다.");
+        }
+
+        // 토큰 차감 (1개)
+        try {
+            walletService.deductToken(userId, 1);
+        } catch (CustomException e) {
+            if (e.getMessage().contains("토큰 잔액이 부족합니다")) {
+                throw new CustomException("투표를 위한 토큰이 부족합니다. 토큰을 충전하세요.");
+            } else if (e.getMessage().contains("연결된 지갑이 없습니다")) {
+                throw new CustomException("투표하려면 지갑 연결이 필요합니다.");
+            } else {
+                throw e;
+            }
         }
 
         // 후보자별 투표 통계가 존재하는지 확인
@@ -76,7 +98,16 @@ public class VotingService {
             votingMapper.incrementVoteCount(sgId, candidateId);
         }
 
-        // 사용자의 투표 상태 업데이트 - 익명 투표를 위해 어떤 후보에 투표했는지는 저장하지 않음
+        // 투표 내역 저장
+        VoteHistory voteHistory = VoteHistory.builder()
+                .userId(userId)
+                .sgId(sgId)
+                .candidateId(candidateId)
+                .votedAt(LocalDateTime.now())
+                .build();
+        voteHistoryMapper.insertVoteHistory(voteHistory);
+
+        // 사용자의 전체 투표 상태 업데이트
         userMapper.updateUserElectionStatus(userId, true);
 
         // 백분율 원자적 업데이트 비동기 처리
@@ -85,6 +116,15 @@ public class VotingService {
         // 투표 결과 반환
         return getVotingStats(sgId);
     }
+
+    /**
+     * 사용자가 특정 선거에 이미 투표했는지 확인 (신규 메서드)
+     */
+    @Transactional(readOnly = true)
+    public boolean hasUserVotedForElection(String userId, String sgId) {
+        return voteHistoryMapper.findByUserIdAndSgId(userId, sgId).isPresent();
+    }
+
 
     /**
      * 통계 업데이트 비동기 처리
@@ -107,17 +147,14 @@ public class VotingService {
         votingMapper.updateAllPercentages(sgId);
     }
 
+
     /**
      * 사용자의 투표 여부 확인
-     * - 컨트롤러에서 호출하는 인터페이스에 맞추기 위해 sgId 매개변수 추가
      */
     @Transactional(readOnly = true)
     public boolean hasUserVoted(String userId, String sgId) {
-        // 현재 구현에서는 사용자별로 투표 여부만 관리하기 때문에 sgId는 사용하지 않음
-        // 추후 선거별 투표 여부를 관리하려면 sgId도 사용하도록 로직 변경 필요
-        return userMapper.findByUserId(userId)
-                .map(User::isElection)
-                .orElse(false);
+        // 특정 선거에 투표했는지 확인하도록 로직 변경
+        return hasUserVotedForElection(userId, sgId);
     }
 
     /**

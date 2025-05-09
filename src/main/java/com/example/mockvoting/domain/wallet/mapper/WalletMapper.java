@@ -1,3 +1,4 @@
+// WalletMapper.java 업데이트
 package com.example.mockvoting.domain.wallet.mapper;
 
 import com.example.mockvoting.domain.wallet.entity.Wallet;
