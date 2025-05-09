@@ -16,4 +16,6 @@ public interface PostMapper {
     List<PostSummaryResponseDTO> selectPostsByCategory(@Param("categoryCode") String categoryCode,
                                                        @Param("offset") int offset,
                                                        @Param("limit") int limit);
+    // 게시글 조회수 업데이트
+    void updateViewCountById(@Param("id") Integer id);
 }
