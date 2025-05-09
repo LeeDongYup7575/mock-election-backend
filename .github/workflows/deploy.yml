@@ -12,6 +12,7 @@ env:
   IMAGE_NAME: spring-backend
   REPOSITORY_NAME: spring-backend
 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
