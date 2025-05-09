@@ -23,4 +23,32 @@
         WHERE post.id = #{id}
     </select>
 
+    <!-- 카테고리별 게시글 조회 -->
+    <select id="selectPostsByCategory" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.author_id,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE category.code = #{categoryCode}
+          AND post.is_deleted = 0
+        ORDER BY post.created_at DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 게시글 조회수 업데이트 -->
+    <update id="updateViewCountById">
+        UPDATE post
+        SET views = views + 1
+        WHERE id = #{id}
+    </update>
 </mapper>

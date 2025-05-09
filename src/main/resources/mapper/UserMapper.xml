@@ -42,6 +42,10 @@
         WHERE user_id = #{userId}
     </update>
 
+    <delete id="deleteUser">
+        delete from user where user_id = #{userId}
+    </delete>
+
     <!-- 사용자 정보 업데이트 (updated_at 필드 제거) -->
     <update id="updateUser" parameterType="com.example.mockvoting.domain.user.entity.User">
         UPDATE user
