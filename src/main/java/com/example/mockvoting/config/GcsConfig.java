@@ -5,6 +5,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,14 +16,18 @@ public class GcsConfig {
     @Bean
     public Storage storage() throws IOException {
         String keyPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
-        if (keyPath == null || keyPath.isBlank()) {
-            keyPath = "src/main/resources/gcs-key.json"; // fallback 경로
-        }
-        if (keyPath == null || keyPath.isBlank()) {
-            throw new IllegalStateException("GOOGLE_APPLICATION_CREDENTIALS 환경 변수가 설정되지 않았습니다.");
+
+        GoogleCredentials credentials;
+        if (keyPath != null && !keyPath.isBlank()) {
+            credentials = GoogleCredentials.fromStream(new FileInputStream(keyPath)); // ✅ GCP Cloud Run용
+        } else {
+            // fallback: 로컬 개발용 (resources 아래 경로)
+            credentials = GoogleCredentials.fromStream(
+                    new ClassPathResource("gcs-key.json").getInputStream()
+            );
         }
 
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(keyPath));
         return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
+
 }
