@@ -1,7 +1,7 @@
 FROM openjdk:17-jdk-slim
 
 # GCS 키 복사
-COPY src/main/resources/gcs-key.json /app/gcs-key.json
+COPY gcs-key.json /app/gcs-key.json
 
 # JAR 복사
 COPY target/app.jar /app/app.jar
