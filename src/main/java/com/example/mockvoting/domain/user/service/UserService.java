@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.user.service;
 
+import com.example.mockvoting.domain.gcs.service.GcsService;
 import com.example.mockvoting.domain.user.dto.OAuth2RequestDTO;
 import com.example.mockvoting.domain.user.dto.TokenResponseDTO;
 import com.example.mockvoting.domain.user.dto.UserResponseDTO;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -24,6 +26,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
     private final GoogleService googleService;
+    private final GcsService gcsService;
 
     /**
      * 구글 로그인/회원가입 처리
@@ -42,6 +45,8 @@ public class UserService {
         Optional<User> existingUser = userMapper.findByEmail(email);
 
         User user;
+        boolean isNewUser = false;
+
         if (existingUser.isPresent()) {
             // 기존 사용자 정보 업데이트
             user = existingUser.get();
@@ -51,14 +56,20 @@ public class UserService {
                 user.setUserId(googleId);
             }
 
-            // 프로필 이미지 업데이트 (구글 이미지가 있는 경우)
-            if (pictureUrl != null && !pictureUrl.isEmpty()) {
-                user.setProfileImgUrl(pictureUrl);
-            }
-
-            // 이름 업데이트
+            // 이름 업데이트 (이름은 구글에서 변경될 수 있으므로 동기화)
             if (name != null && !name.isEmpty()) {
                 user.setName(name);
+            }
+
+            // 프로필 이미지 업데이트 - 중요: 사용자가 커스텀 프로필 이미지를 설정한 경우에는 덮어쓰지 않음
+            // 기본 이미지인 경우나 구글 이미지인 경우(URL에 googleusercontent.com이 포함된 경우)에만 업데이트
+            String currentProfileUrl = user.getProfileImgUrl();
+            boolean isDefaultOrGoogleImage = currentProfileUrl == null ||
+                    currentProfileUrl.contains("/images/profiles/default-profile.png") ||
+                    currentProfileUrl.contains("googleusercontent.com");
+
+            if (pictureUrl != null && !pictureUrl.isEmpty() && isDefaultOrGoogleImage) {
+                user.setProfileImgUrl(pictureUrl);
             }
 
             // 정보 업데이트
@@ -66,6 +77,7 @@ public class UserService {
             log.info("기존 사용자 구글 로그인: {}", email);
         } else {
             // 신규 사용자 생성
+            isNewUser = true;
             user = User.builder()
                     .userId(googleId)
                     .email(email)
@@ -94,6 +106,10 @@ public class UserService {
                 .token(token)
                 .userId(user.getUserId())
                 .role(user.getRole())
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .profileImgUrl(user.getProfileImgUrl())
                 .build();
     }
 
@@ -109,8 +125,10 @@ public class UserService {
             throw new CustomException("존재하지 않는 사용자입니다.");
         }
 
+        userMapper.deleteUser(userId);
+
         // 사용자 비활성화 (논리적 삭제)
-        userMapper.updateUserActiveStatus(userId, false);
+        // userMapper.updateUserActiveStatus(userId, false);
     }
 
     /**
@@ -139,6 +157,31 @@ public class UserService {
                         .isElection(user.isElection())
                         .build());
     }
+
+    @Transactional
+    public UserResponseDTO updateNicknameAndProfile(
+            String userId,
+            String nickname,
+            MultipartFile profileImage
+    ) {
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다."));
+
+        user.setNickname(nickname);
+
+        // 프로필 이미지가 넘어오면 GCS에 업로드하고 URL 저장
+        if (profileImage != null && !profileImage.isEmpty()) {
+            // "profiles" 는 application.yml이나 @Value("${gcs.path.profiles}") 에 설정된 프로필 폴더 키
+            String imageUrl = gcsService.upload("profiles", profileImage);
+            user.setProfileImgUrl(imageUrl);
+        }
+
+        userMapper.updateUser(user);  // 이 메서드는 nickname, profile_img_url만 바꿔도 OK
+
+        return getUserInfo(userId)
+                .orElseThrow(() -> new CustomException("수정된 사용자 정보를 찾을 수 없습니다."));
+    }
+
 
     /**
      * 사용자 투표 상태 업데이트

@@ -20,6 +20,9 @@ public interface UserMapper {
     // 사용자 활성 상태 업데이트 (회원 탈퇴)
     void updateUserActiveStatus(@Param("userId") String userId, @Param("active") boolean active);
 
+    // 회원 완전 삭제
+    void deleteUser(@Param("userId") String userId);
+
     // 사용자 정보 업데이트
     void updateUser(User user);
 
