@@ -57,33 +57,41 @@ public class VotingService {
      */
     @Transactional
     public VotingStatsDTO submitVoting(String sgId, Integer candidateId, String userId) {
-        // 사용자 조회
+        // 1. 사용자 조회
         User user = userMapper.findByUserId(userId)
-                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음: userId={}", userId);
+                    return new CustomException("사용자를 찾을 수 없습니다.");
+                });
 
-        // 이미 투표했는지 확인 (user 테이블의 is_election 필드로 확인)
+        // 2. 이미 투표했는지 확인 (user 테이블의 is_election 필드로 확인)
         if (user.isElection()) {
+            log.warn("이미 투표한 사용자: userId={}", userId);
             throw new CustomException("이미 투표에 참여하셨습니다.");
         }
 
-        // 토큰 차감 (1개)
+        // 3. 토큰 차감 (1개)
         try {
+            log.info("토큰 차감 시작: userId={}, amount=1", userId);
             walletService.deductToken(userId, 1);
         } catch (CustomException e) {
             if (e.getMessage().contains("토큰 잔액이 부족합니다")) {
+                log.error("토큰 잔액 부족: userId={}", userId);
                 throw new CustomException("투표를 위한 토큰이 부족합니다. 토큰을 충전하세요.");
             } else if (e.getMessage().contains("연결된 지갑이 없습니다")) {
+                log.error("연결된 지갑 없음: userId={}", userId);
                 throw new CustomException("투표하려면 지갑 연결이 필요합니다.");
             } else {
                 throw e;
             }
         }
 
-        // 후보자별 투표 통계가 존재하는지 확인
+        // 4. 후보자별 투표 통계가 존재하는지 확인
         VotingStats stats = votingMapper.getVotingStatsByCandidateId(sgId, candidateId);
 
         if (stats == null) {
             // 해당 후보 통계가 없으면 새로 생성
+            log.info("새 투표 통계 생성: sgId={}, candidateId={}", sgId, candidateId);
             VotingStats newStats = VotingStats.builder()
                     .sgId(sgId)
                     .candidateId(candidateId)
@@ -93,16 +101,18 @@ public class VotingService {
             votingMapper.insertVotingStats(newStats);
         } else {
             // 원자적으로 투표 수 증가
+            log.info("투표 수 증가: sgId={}, candidateId={}, 현재 count={}", sgId, candidateId, stats.getVoteCount());
             votingMapper.incrementVoteCount(sgId, candidateId);
         }
 
-        // 사용자의 투표 상태 업데이트 (vote_history 테이블 대신 user 테이블의 is_election 필드 사용)
+        // 5. 사용자의 투표 상태 업데이트 (user 테이블의 is_election 필드 사용)
+        log.info("사용자 투표 상태 업데이트: userId={}, isElection=true", userId);
         userMapper.updateUserElectionStatus(userId, true);
 
-        // 백분율 원자적 업데이트 비동기 처리
+        // 6. 백분율 원자적 업데이트 비동기 처리
         updateStatisticsAsync(sgId);
 
-        // 투표 결과 반환
+        // 7. 투표 결과 반환
         return getVotingStats(sgId);
     }
 
@@ -111,11 +121,21 @@ public class VotingService {
      */
     @Transactional(readOnly = true)
     public boolean hasUserVoted(String userId, String sgId) {
-        User user = userMapper.findByUserId(userId).orElse(null);
-        if (user == null) {
+        if (userId == null || userId.isEmpty()) {
+            log.warn("유효하지 않은 사용자 ID: {}", userId);
             return false;
         }
-        return user.isElection();
+
+        User user = userMapper.findByUserId(userId).orElse(null);
+        if (user == null) {
+            log.warn("사용자를 찾을 수 없음: userId={}", userId);
+            return false;
+        }
+
+        // 중요: user.isElection 값 확인 및 로깅
+        boolean hasVoted = user.isElection();
+        log.info("사용자 투표 상태 확인: userId={}, isElection={}", userId, hasVoted);
+        return hasVoted;
     }
 
     /**
@@ -137,6 +157,7 @@ public class VotingService {
     public void updateStatistics(String sgId) {
         // 원자적으로 모든 후보의 백분율 업데이트
         votingMapper.updateAllPercentages(sgId);
+        log.info("투표 통계 업데이트 완료: sgId={}", sgId);
     }
 
     /**
@@ -158,11 +179,16 @@ public class VotingService {
                         .build())
                 .collect(Collectors.toList());
 
-        return VotingStatsDTO.builder()
+        VotingStatsDTO statsDTO = VotingStatsDTO.builder()
                 .sgId(sgId)
                 .participation(participation)
                 .votes(voteResults)
                 .build();
+
+        log.info("투표 통계 조회 결과: sgId={}, 참여율={}, 투표수={}",
+                sgId, participation, totalVotes);
+
+        return statsDTO;
     }
 
     /**
@@ -173,11 +199,14 @@ public class VotingService {
         try {
             // 모든 활성 투표 ID 조회
             List<String> activeVotingIds = votingMapper.findAllActiveVotingIds();
+            log.info("정기 투표 통계 재계산 시작: 활성 투표 수={}", activeVotingIds.size());
 
             // 각 투표에 대해 통계 재계산
             for (String sgId : activeVotingIds) {
                 updateStatistics(sgId);
             }
+
+            log.info("정기 투표 통계 재계산 완료");
         } catch (Exception e) {
             log.error("정기 통계 재계산 중 오류 발생: {}", e.getMessage(), e);
         }

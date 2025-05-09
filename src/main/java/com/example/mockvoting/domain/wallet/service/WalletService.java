@@ -35,7 +35,7 @@ public class WalletService {
             throw new CustomException("유효하지 않은 사용자 ID입니다.");
         }
         if (walletAddress == null || walletAddress.isEmpty()) {
-            log.error("유효하지 않은 지갑 주소: {}", walletAddress);
+            log.error("유효하지 않은 지갑 주소: {}", userId);
             throw new CustomException("유효하지 않은 지갑 주소입니다.");
         }
 
@@ -56,10 +56,17 @@ public class WalletService {
         if (existingWallet.isPresent()) {
             // 기존 지갑 정보 업데이트
             wallet = existingWallet.get();
+            int originalBalance = wallet.getTokenBalance(); // 기존 잔액 저장
+
             wallet.setWalletAddress(walletAddress);
             wallet.setUpdatedAt(LocalDateTime.now());
             walletMapper.updateWallet(wallet);
-            log.info("기존 지갑 정보 업데이트: userId={}, walletAddress={}", userId, walletAddress);
+
+            // 중요: tokenBalance는 업데이트하지 않음 (기존 값 유지)
+            wallet.setTokenBalance(originalBalance);
+
+            log.info("기존 지갑 정보 업데이트: userId={}, walletAddress={}, tokenBalance={}",
+                    userId, walletAddress, wallet.getTokenBalance());
         } else {
             // 새 지갑 정보 저장
             isNewWallet = true;
@@ -126,11 +133,18 @@ public class WalletService {
         if (existingWallet.isPresent()) {
             // 기존 지갑 정보 업데이트
             wallet = existingWallet.get();
+            int originalBalance = wallet.getTokenBalance(); // 기존 잔액 저장
+
             wallet.setWalletAddress(walletAddress);
             wallet.setPrivateKey(privateKey);
             wallet.setUpdatedAt(LocalDateTime.now());
             walletMapper.updateWallet(wallet);
-            log.info("기존 지갑 정보 업데이트(새 지갑): userId={}, walletAddress={}", userId, walletAddress);
+
+            // 중요: tokenBalance는 업데이트하지 않음 (기존 값 유지)
+            wallet.setTokenBalance(originalBalance);
+
+            log.info("기존 지갑 정보 업데이트(새 지갑): userId={}, walletAddress={}, tokenBalance={}",
+                    userId, walletAddress, wallet.getTokenBalance());
         } else {
             // 새 지갑 정보 저장
             isNewWallet = true;
@@ -156,6 +170,9 @@ public class WalletService {
             // 토큰 발급 여부 업데이트
             userMapper.updateUserTokenStatus(userId, true);
             log.info("초기 토큰 발급 완료: userId={}, tokenBalance=10", userId);
+        } else {
+            log.info("이미 토큰을 발급받은 사용자: userId={}, tokenBalance={}",
+                    userId, wallet.getTokenBalance());
         }
 
         return WalletResponseDTO.builder()
@@ -177,11 +194,15 @@ public class WalletService {
 
         Optional<Wallet> walletOpt = walletMapper.findByUserId(userId);
 
-        return walletOpt.map(wallet -> WalletResponseDTO.builder()
-                        .walletAddress(wallet.getWalletAddress())
-                        .tokenBalance(wallet.getTokenBalance())
-                        .connected(true)
-                        .build())
+        return walletOpt.map(wallet -> {
+                    log.info("지갑 상태 조회: userId={}, connected=true, tokenBalance={}",
+                            userId, wallet.getTokenBalance());
+                    return WalletResponseDTO.builder()
+                            .walletAddress(wallet.getWalletAddress())
+                            .tokenBalance(wallet.getTokenBalance())
+                            .connected(true)
+                            .build();
+                })
                 .orElse(WalletResponseDTO.builder()
                         .connected(false)
                         .build());
@@ -198,7 +219,9 @@ public class WalletService {
         }
 
         Optional<Wallet> walletOpt = walletMapper.findByUserId(userId);
-        return walletOpt.map(Wallet::getTokenBalance).orElse(0);
+        int balance = walletOpt.map(Wallet::getTokenBalance).orElse(0);
+        log.info("토큰 잔액 조회: userId={}, balance={}", userId, balance);
+        return balance;
     }
 
     /**
@@ -263,7 +286,19 @@ public class WalletService {
         // 토큰 발급 여부 확인
         if (user.isHasReceivedToken()) {
             log.warn("이미 토큰을 발급받은 사용자: {}", userId);
-            throw new CustomException("이미 토큰을 발급받았습니다.");
+
+            // 지갑 정보 가져오기
+            Optional<Wallet> existingWallet = walletMapper.findByUserId(userId);
+            if (existingWallet.isPresent()) {
+                Wallet wallet = existingWallet.get();
+                return WalletResponseDTO.builder()
+                        .walletAddress(wallet.getWalletAddress())
+                        .tokenBalance(wallet.getTokenBalance())
+                        .connected(true)
+                        .build();
+            } else {
+                throw new CustomException("이미 토큰을 발급받았지만 지갑 정보가 없습니다.");
+            }
         }
 
         // 새 지갑 생성 또는 기존 지갑 연결
