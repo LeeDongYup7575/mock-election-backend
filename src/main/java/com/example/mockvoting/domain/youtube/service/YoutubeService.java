@@ -19,7 +19,7 @@ public class YoutubeService {
     private final YoutubeCacheRepository cacheRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private final Duration ttl = Duration.ofMinutes(30); // TTL: 30분
+    private final Duration ttl = Duration.ofMinutes(240);
 
     public YoutubeService(YoutubeCacheRepository cacheRepository) {
         this.cacheRepository = cacheRepository;
