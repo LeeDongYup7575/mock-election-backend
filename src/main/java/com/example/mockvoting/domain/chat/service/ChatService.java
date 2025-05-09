@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Collections;
 
-@Service
+@Service // Service 레이어 - 채팅 메시지 관련 로직 담당
 public class ChatService {
 
-    @Autowired
+    @Autowired // MongoDB 저장소 주입
     private ChatMessageRepository chatMessageRepository;
 
     // 메시지 저장
