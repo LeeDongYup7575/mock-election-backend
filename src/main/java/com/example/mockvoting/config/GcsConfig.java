@@ -6,19 +6,21 @@ import com.google.cloud.storage.StorageOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 
+
+import java.io.FileInputStream;
 import java.io.IOException;
 
 
 @Configuration
 public class GcsConfig {
+
     @Value("${gcs.key.location}")
     private String keyPath;
 
     @Bean
     public Storage storage() throws IOException {
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new ClassPathResource(keyPath).getInputStream());
+        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(keyPath));
         return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
 }
