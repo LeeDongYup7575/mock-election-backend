@@ -16,7 +16,13 @@
             post.updated_at,
             category.code AS category_code,
             category.name AS category_name,
-            user.nickname AS author_nickname
+            user.nickname AS author_nickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = FALSE
+            ) AS comment_count
         FROM post
                  LEFT JOIN category ON post.category_id = category.id
                  LEFT JOIN user ON post.author_id = user.user_id
