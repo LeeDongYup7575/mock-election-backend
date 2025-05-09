@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.community.mapper.PostAttachmentMapper">
+    <select id="selectAttachmentsByPostId" resultType="com.example.mockvoting.domain.community.dto.PostAttachmentResponseDTO">
+        SELECT
+            id, name, url, size
+        FROM
+            post_attachment
+        WHERE
+            post_id = #{postId}
+        ORDER BY id
+    </select>
+</mapper>
