@@ -301,9 +301,10 @@ public class WalletService {
                 .build();
     }
 
+
     /**
      * 지갑 연결 해제
-     * - 지갑 연결만 해제하고 토큰 잔액은 유지
+     * - 지갑 정보 완전히 삭제
      */
     @Transactional
     public void disconnectWallet(String userId) {
@@ -316,12 +317,8 @@ public class WalletService {
         Optional<Wallet> walletOpt = walletMapper.findByUserId(userId);
 
         if (walletOpt.isPresent()) {
-            Wallet wallet = walletOpt.get();
-            // 완전히 삭제하지 않고 연결 상태만 업데이트
-            wallet.setWalletAddress(null);
-            wallet.setPrivateKey(null);
-            wallet.setUpdatedAt(LocalDateTime.now());
-            walletMapper.updateWallet(wallet);
+            // 지갑 정보 완전히 삭제 (저장하지 않고 삭제)
+            walletMapper.deleteWallet(userId);
             log.info("지갑 연결 해제 완료: userId={}", userId);
         } else {
             log.info("지갑 연결 해제 요청 - 연결된 지갑 없음: userId={}", userId);

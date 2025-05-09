@@ -81,9 +81,6 @@ public class VotingController {
     /**
      * 사용자 투표 상태 확인 API
      */
-    /**
-     * 사용자 투표 상태 확인 API
-     */
     @GetMapping("/{sgId}/status")
     public ResponseEntity<ApiResponse<Boolean>> checkVotingStatus(
             @PathVariable String sgId,

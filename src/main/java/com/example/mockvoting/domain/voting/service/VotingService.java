@@ -3,9 +3,7 @@ package com.example.mockvoting.domain.voting.service;
 import com.example.mockvoting.domain.voting.dto.VotingCardDTO;
 import com.example.mockvoting.domain.voting.dto.PartyPolicyDTO;
 import com.example.mockvoting.domain.voting.dto.VotingStatsDTO;
-import com.example.mockvoting.domain.voting.entity.VoteHistory;
 import com.example.mockvoting.domain.voting.entity.VotingStats;
-import com.example.mockvoting.domain.voting.mapper.VoteHistoryMapper;
 import com.example.mockvoting.domain.voting.mapper.VotingMapper;
 import com.example.mockvoting.domain.user.entity.User;
 import com.example.mockvoting.domain.user.mapper.UserMapper;
@@ -19,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +27,6 @@ public class VotingService {
 
     private final VotingMapper votingMapper;
     private final UserMapper userMapper;
-    private final VoteHistoryMapper voteHistoryMapper;
     private final WalletService walletService;
 
     /**
@@ -55,17 +51,19 @@ public class VotingService {
     }
 
     /**
-     * 사용자 투표 제출 및 통계 계산
-     * - 원자적 업데이트를 사용하여 동시성 문제 해결
-     */
-    /**
      * 사용자 투표 제출 및 통계 계산 (토큰 차감 로직 추가)
+     * 익명성 보장을 위해 vote_history 테이블 사용하지 않음
+     * 대신 user 테이블의 is_election 필드를 활용
      */
     @Transactional
     public VotingStatsDTO submitVoting(String sgId, Integer candidateId, String userId) {
-        // 이미 해당 선거에 투표했는지 확인
-        if (hasUserVotedForElection(userId, sgId)) {
-            throw new CustomException("이미 해당 선거에 투표하셨습니다.");
+        // 사용자 조회
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
+
+        // 이미 투표했는지 확인 (user 테이블의 is_election 필드로 확인)
+        if (user.isElection()) {
+            throw new CustomException("이미 투표에 참여하셨습니다.");
         }
 
         // 토큰 차감 (1개)
@@ -98,16 +96,7 @@ public class VotingService {
             votingMapper.incrementVoteCount(sgId, candidateId);
         }
 
-        // 투표 내역 저장
-        VoteHistory voteHistory = VoteHistory.builder()
-                .userId(userId)
-                .sgId(sgId)
-                .candidateId(candidateId)
-                .votedAt(LocalDateTime.now())
-                .build();
-        voteHistoryMapper.insertVoteHistory(voteHistory);
-
-        // 사용자의 전체 투표 상태 업데이트
+        // 사용자의 투표 상태 업데이트 (vote_history 테이블 대신 user 테이블의 is_election 필드 사용)
         userMapper.updateUserElectionStatus(userId, true);
 
         // 백분율 원자적 업데이트 비동기 처리
@@ -118,13 +107,16 @@ public class VotingService {
     }
 
     /**
-     * 사용자가 특정 선거에 이미 투표했는지 확인 (신규 메서드)
+     * 사용자가 투표했는지 확인 (간소화: user 테이블의 is_election 필드만 확인)
      */
     @Transactional(readOnly = true)
-    public boolean hasUserVotedForElection(String userId, String sgId) {
-        return voteHistoryMapper.findByUserIdAndSgId(userId, sgId).isPresent();
+    public boolean hasUserVoted(String userId, String sgId) {
+        User user = userMapper.findByUserId(userId).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        return user.isElection();
     }
-
 
     /**
      * 통계 업데이트 비동기 처리
@@ -147,25 +139,14 @@ public class VotingService {
         votingMapper.updateAllPercentages(sgId);
     }
 
-
-    /**
-     * 사용자의 투표 여부 확인
-     */
-    @Transactional(readOnly = true)
-    public boolean hasUserVoted(String userId, String sgId) {
-        // 특정 선거에 투표했는지 확인하도록 로직 변경
-        return hasUserVotedForElection(userId, sgId);
-    }
-
     /**
      * 특정 투표의 투표 통계 조회
      */
     @Transactional(readOnly = true)
     public VotingStatsDTO getVotingStats(String sgId) {
         List<VotingStats> stats = votingMapper.getVotingStatsBySgId(sgId);
-//        int totalVotes = votingMapper.countBySgId(sgId);
+        int totalVotes = stats.stream().mapToInt(VotingStats::getVoteCount).sum();
 
-        int totalVotes = 20;
         // 참여율 계산 (실제 구현에서는 전체 유권자 수로 나누어야 함)
         double participation = totalVotes > 0 ? Math.min(100.0, totalVotes * 2.5) : 0.0;
 

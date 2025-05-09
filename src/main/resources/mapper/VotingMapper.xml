@@ -55,7 +55,7 @@
             sg_id = #{sgId}
     </select>
 
-    <!-- 특정 후보의 투표 통계 조회 - 이 메서드가 없어서 오류 발생 -->
+    <!-- 특정 후보의 투표 통계 조회 -->
     <select id="getVotingStatsByCandidateId" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">
         SELECT
             id, sg_id as sgId, candidate_id as candidateId,
@@ -69,16 +69,16 @@
     <!-- 새로운 투표 통계 삽입 -->
     <insert id="insertVotingStats" parameterType="com.example.mockvoting.domain.voting.entity.VotingStats">
         INSERT INTO voting_stats (
-            sg_id, candidate_id, vote_count, percentage
+            sg_id, candidate_id, vote_count, percentage, created_at, updated_at
         ) VALUES (
-                     #{sgId}, #{candidateId}, #{voteCount}, #{percentage}
+                     #{sgId}, #{candidateId}, #{voteCount}, #{percentage}, NOW(), NOW()
                  )
     </insert>
 
     <!-- 특정 후보의 투표 수 원자적 증가 -->
     <update id="incrementVoteCount">
         UPDATE voting_stats
-        SET vote_count = vote_count + 1
+        SET vote_count = vote_count + 1, updated_at = NOW()
         WHERE sg_id = #{sgId} AND candidate_id = #{candidateId}
     </update>
 
@@ -87,7 +87,7 @@
         UPDATE voting_stats vs
         SET percentage = (vs.vote_count * 100.0 / (
             SELECT SUM(vote_count) FROM voting_stats WHERE sg_id = #{sgId}
-        ))
+        )), updated_at = NOW()
         WHERE vs.sg_id = #{sgId}
     </update>
 
