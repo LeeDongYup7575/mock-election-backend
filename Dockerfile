@@ -2,7 +2,7 @@ FROM openjdk:17-jdk-slim
 
 
 # JAR 복사
-COPY target/app.jar /app/app.jar
+COPY target/*.jar /app/app.jar
 
 
 
