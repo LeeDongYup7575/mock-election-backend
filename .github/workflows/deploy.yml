@@ -49,8 +49,8 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
-            --image asia-northeast3-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE_NAME \
-            --platform managed \
-            --region $REGION \
-            --allow-unauthenticated \
-            --set-env-vars jwt.secret=votingAppSecretKey1234567890
+           --image asia-northeast3-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE_NAME \
+           --platform managed \
+           --region $REGION \
+           --allow-unauthenticated \
+           --set-env-vars jwt.secret=votingAppSecretKey1234567890,jwt.expiration=86400000
