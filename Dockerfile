@@ -7,4 +7,4 @@ COPY target/*.jar /app/app.jar
 
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=classpath:/application.properties"]
