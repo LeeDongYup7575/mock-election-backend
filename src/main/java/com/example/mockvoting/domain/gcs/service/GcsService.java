@@ -45,9 +45,14 @@ public class GcsService {
             String safeFileName = uuid + extension;
             String fullPath = resolvePath(type, safeFileName);
 
-            BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fullPath)
-                    .setContentType(file.getContentType())
-                    .build();
+            BlobInfo.Builder blobBuilder = BlobInfo.newBuilder(bucketName, fullPath)
+                    .setContentType(file.getContentType());
+
+            if ("post_attachments".equals(type)) {
+                blobBuilder.setContentDisposition("attachment; filename=\"" + originalName + "\"");
+            }
+
+            BlobInfo blobInfo = blobBuilder.build();
 
             storage.create(blobInfo, file.getBytes());
             log.info("파일 업로드 성공: {}", fullPath);
