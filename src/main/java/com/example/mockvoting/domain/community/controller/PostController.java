@@ -6,6 +6,7 @@ import com.example.mockvoting.domain.community.dto.PostDetailViewDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
 import com.example.mockvoting.domain.community.service.PostService;
 import com.example.mockvoting.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class PostController {
      *  게시글 등록
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Long>> createPost(@RequestPart PostCreateRequestDTO dto,
+    public ResponseEntity<ApiResponse<Long>> create(@RequestPart PostCreateRequestDTO dto,
                                                         @RequestPart(value="attachments", required = false) List<MultipartFile> attachments
     ) {
         log.info("게시글 등록 요청: {}", dto.getTitle());
@@ -93,4 +94,26 @@ public class PostController {
             return ResponseEntity.internalServerError().body(ApiResponse.error("게시글 등록 실패"));
         }
     }
+
+    /**
+     *  게시글 삭제
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id, HttpServletRequest request) {
+        String userId = (String) request.getAttribute("userId");
+        log.info("게시글 삭제 요청: postId={}, 요청자={}", id, userId);
+
+        try {
+            postService.delete(id, userId);
+            log.info("게시글 삭제 요청 처리 성공: postId={}", id);
+            return ResponseEntity.ok(ApiResponse.success("게시글 삭제 성공", null));
+        } catch (SecurityException e) {
+            log.warn("게시글 삭제 권한 없음: postId={}, 요청자={}", id, userId);
+            return ResponseEntity.status(403).body(ApiResponse.error("게시글 삭제 권한이 없습니다."));
+        } catch (Exception e) {
+            log.error("게시글 삭제 요청 처리 실패: postId={}, 요청자={}", id, userId, e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("게시글 삭제 실패"));
+        }
+    }
+
 }
