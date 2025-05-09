@@ -1,10 +1,8 @@
 FROM openjdk:17-jdk-slim
 
+WORKDIR /app
 
-# JAR 복사
-COPY target/*.jar /app/app.jar
-
-
+COPY target/*.jar app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=classpath:/application.properties"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
