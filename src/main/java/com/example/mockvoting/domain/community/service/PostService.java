@@ -118,7 +118,7 @@ public class PostService {
                         .name(file.getOriginalFilename())
                         .url(url)
                         .size(file.getSize())
-                        .isDeleted(false)
+                        .deleted(false)
                         .build();
 
                 postAttachmentRepository.save(attachment);
@@ -126,5 +126,28 @@ public class PostService {
         }
 
         return id;
+    }
+
+    /**
+     *  게시글 삭제
+     */
+    @Transactional
+    public void delete(Long postId, String requesterId) {
+        // 게시글 존재 확인 및 소유자 확인
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다"));
+
+        if (!post.getAuthorId().equals(requesterId)) {
+            throw new SecurityException("게시글 삭제 권한이 없습니다");
+        }
+
+        // 게시글 soft delete
+        post.setDeleted(true);
+
+        // 첨부파일 soft delete
+        List<PostAttachment> attachments = postAttachmentRepository.findByPostId(postId);
+        for (PostAttachment attachment : attachments) {
+            attachment.setDeleted(true);
+        }
     }
 }
