@@ -51,4 +51,5 @@ jobs:
             --image asia-northeast3-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE_NAME \
             --platform managed \
             --region $REGION \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars jwt.secret=votingAppSecretKey1234567890
