@@ -13,10 +13,11 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "chat_messages")
+@Document(collection = "chat_message")
 public class ChatMessage {
 
-    private int id;
+    @Id
+    private String id; // String 타입으로 변경하여 MongoDB가 자동 생성하는 ObjectId 사용
     private String type;
     private String content;
     private Date sentAt;
