@@ -18,7 +18,14 @@ public class GcsConfig {
 
     @Bean
     public Storage storage() throws IOException {
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new ClassPathResource(keyPath).getInputStream());
-        return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
-    }
+        try{ClassPathResource path =  new ClassPathResource(keyPath);
+            System.out.println(path.exists() + " 찍힘?");
+            GoogleCredentials credentials = GoogleCredentials.fromStream(path.getInputStream());
+            return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("==============여기임==================");
+            throw new RuntimeException(e);
+        }
+        }
 }
