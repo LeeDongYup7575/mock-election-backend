@@ -52,25 +52,10 @@ public class ChatController {
 
         // 메시지 저장 및 반환
         return chatService.saveMessage(chatMessage);
-
-//        //메시지 저장
-//        ChatMessage saved = chatService.saveMessage(chatMessage);
-//
-//        //직접 브로드캐스트
-//        messagingTemplate.convertAndSend("/topic/public", saved);
-
     }
 
-    // Optional: endpoint to get user info for the chat
-//    @GetMapping("/api/chat/user")
-//    @ResponseBody
-//    public Map<String, Object> getUserInfo(@RequestParam String userId) {
-//        // This would be implemented based on your user service
-//        return chatService.getUserInfo(userId);
-//    }
-
     // REST API: 이전 채팅 메시지 조회
-    @GetMapping("/api/votings/history/{chatroomId}")
+    @GetMapping("/api/chat/history/{chatroomId}")
     @ResponseBody
     public List<ChatMessage> getChatHistory(@PathVariable int chatroomId) {
         return chatService.getChatHistory(chatroomId);
