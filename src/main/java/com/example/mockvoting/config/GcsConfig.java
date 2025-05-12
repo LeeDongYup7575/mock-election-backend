@@ -8,20 +8,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 
 @Configuration
 public class GcsConfig {
-
     @Value("${gcs.key.location}")
     private String keyPath;
 
     @Bean
     public Storage storage() throws IOException {
-        FileInputStream serviceAccount = new FileInputStream(keyPath);
-        GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+        GoogleCredentials credentials = GoogleCredentials.fromStream(new ClassPathResource(keyPath).getInputStream());
         return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
 }
