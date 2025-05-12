@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.youtube.controller;
 
+import com.example.mockvoting.domain.youtube.service.YoutubeService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,23 +11,16 @@ import org.springframework.web.client.RestTemplate;
 @RequestMapping("/api/youtube")
 public class YoutubeController {
 
+    private final YoutubeService youtubeService;
 
-    @Value("${youtube.api.key}")
-    private String apiKey;
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    public YoutubeController(YoutubeService youtubeService) {
+        this.youtubeService = youtubeService;
+    }
 
     @GetMapping("/videos")
     public ResponseEntity<?> getYoutubeVideos(@RequestParam String query) {
-        String url = "https://www.googleapis.com/youtube/v3/search"
-                + "?part=snippet"
-                + "&q=" + query
-                + "&key=" + apiKey
-                + "&type=video"
-                + "&maxResults=10";
-
         try {
-            String response = restTemplate.getForObject(url, String.class);
+            String response = youtubeService.getVideos(query);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity
@@ -35,3 +29,4 @@ public class YoutubeController {
         }
     }
 }
+

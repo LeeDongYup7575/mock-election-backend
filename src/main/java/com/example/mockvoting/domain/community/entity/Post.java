@@ -51,7 +51,7 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted;
+    private boolean deleted;
 
     @PrePersist
     protected void onCreate() {

@@ -7,11 +7,11 @@
         INSERT INTO user (
             user_id, email, name, nickname,
             profile_img_url, role,
-            created_at, active, is_election
+            created_at, active, is_election, has_received_token
         ) VALUES (
                      #{userId}, #{email}, #{name}, #{nickname},
                      #{profileImgUrl}, #{role},
-                     #{createdAt}, #{active}, #{isElection}
+                     #{createdAt}, #{active}, #{isElection}, #{hasReceivedToken}
                  )
     </insert>
 
@@ -20,7 +20,8 @@
         SELECT
             id, user_id as userId, email, name,
             nickname, profile_img_url as profileImgUrl,
-            role, created_at as createdAt, active, is_election as isElection
+            role, created_at as createdAt, active,
+            is_election as isElection, has_received_token as hasReceivedToken
         FROM user
         WHERE user_id = #{userId}
     </select>
@@ -30,7 +31,8 @@
         SELECT
             id, user_id as userId, email, name,
             nickname, profile_img_url as profileImgUrl,
-            role, created_at as createdAt, active, is_election as isElection
+            role, created_at as createdAt, active,
+            is_election as isElection, has_received_token as hasReceivedToken
         FROM user
         WHERE email = #{email}
     </select>
@@ -46,7 +48,7 @@
         delete from user where user_id = #{userId}
     </delete>
 
-    <!-- 사용자 정보 업데이트 (updated_at 필드 제거) -->
+    <!-- 사용자 정보 업데이트 -->
     <update id="updateUser" parameterType="com.example.mockvoting.domain.user.entity.User">
         UPDATE user
         SET
@@ -63,4 +65,10 @@
         WHERE user_id = #{userId}
     </update>
 
+    <!-- 사용자 토큰 발급 상태 업데이트 (추가) -->
+    <update id="updateUserTokenStatus">
+        UPDATE user
+        SET has_received_token = #{hasReceivedToken}
+        WHERE user_id = #{userId}
+    </update>
 </mapper>

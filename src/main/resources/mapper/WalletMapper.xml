@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.wallet.mapper.WalletMapper">
+
+    <!-- 지갑 정보 저장 -->
+    <insert id="insertWallet" parameterType="com.example.mockvoting.domain.wallet.entity.Wallet">
+        INSERT INTO wallet (
+            user_id, wallet_address, private_key,
+            token_balance, created_at, updated_at
+        ) VALUES (
+                     #{userId}, #{walletAddress}, #{privateKey},
+                     #{tokenBalance}, #{createdAt}, #{updatedAt}
+                 )
+    </insert>
+
+    <!-- 사용자 ID로 지갑 정보 조회 -->
+    <select id="findByUserId" resultType="com.example.mockvoting.domain.wallet.entity.Wallet">
+        SELECT
+            id, user_id as userId, wallet_address as walletAddress,
+            private_key as privateKey, token_balance as tokenBalance,
+            created_at as createdAt, updated_at as updatedAt
+        FROM wallet
+        WHERE user_id = #{userId}
+            LIMIT 1
+    </select>
+
+    <!-- 지갑 주소로 지갑 정보 조회 -->
+    <select id="findByWalletAddress" resultType="com.example.mockvoting.domain.wallet.entity.Wallet">
+        SELECT
+            id, user_id as userId, wallet_address as walletAddress,
+            private_key as privateKey, token_balance as tokenBalance,
+            created_at as createdAt, updated_at as updatedAt
+        FROM wallet
+        WHERE wallet_address = #{walletAddress}
+            LIMIT 1
+    </select>
+
+    <!-- 지갑 정보 업데이트 -->
+    <update id="updateWallet" parameterType="com.example.mockvoting.domain.wallet.entity.Wallet">
+        UPDATE wallet
+        SET
+        wallet_address = #{walletAddress},
+        <if test="privateKey != null and privateKey != ''">
+            private_key = #{privateKey},
+        </if>
+        token_balance = #{tokenBalance},
+        updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 지갑 정보 삭제 -->
+    <delete id="deleteWallet">
+        DELETE FROM wallet
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 토큰 잔액 업데이트 -->
+    <update id="updateTokenBalance">
+        UPDATE wallet
+        SET
+            token_balance = #{tokenBalance},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+</mapper>
