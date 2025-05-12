@@ -70,7 +70,7 @@ public class ChatController {
 //    }
 
     // REST API: 이전 채팅 메시지 조회
-    @GetMapping("/api/votings/history/{chatroomId}")
+    @GetMapping("/api/chat/history/{chatroomId}")
     @ResponseBody
     public List<ChatMessage> getChatHistory(@PathVariable int chatroomId) {
         return chatService.getChatHistory(chatroomId);
