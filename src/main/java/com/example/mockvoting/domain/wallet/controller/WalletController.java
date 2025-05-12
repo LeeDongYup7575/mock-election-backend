@@ -305,4 +305,46 @@ public class WalletController {
                     .body(ApiResponse.error("서버 오류: " + e.getMessage()));
         }
     }
+
+    /**
+     * 메타마스크 지갑 연결 API
+     */
+    @PostMapping("/connect/metamask")
+    public ResponseEntity<ApiResponse<WalletResponseDTO>> connectMetaMaskWallet(
+            HttpServletRequest request,
+            @RequestBody Map<String, String> payload) {
+
+        try {
+            String userId = (String) request.getAttribute("userId");
+            log.info("메타마스크 지갑 연결 요청 시작: 사용자={}", userId);
+
+            if (userId == null || userId.isEmpty()) {
+                log.error("인증되지 않은 요청 - userId가 없음");
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("인증이 필요합니다. 다시 로그인해주세요."));
+            }
+
+            String walletAddress = payload.get("walletAddress");
+            log.info("메타마스크 지갑 연결 요청 세부정보: 사용자={}, 지갑주소={}", userId, walletAddress);
+
+            if (walletAddress == null || walletAddress.isEmpty()) {
+                log.error("유효하지 않은 지갑 주소: null 또는 빈 문자열");
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("유효한 지갑 주소가 필요합니다."));
+            }
+
+            // 메타마스크 지갑 연결 서비스 호출
+            WalletResponseDTO response = walletService.connectMetaMaskWallet(userId, walletAddress);
+            return ResponseEntity.ok(ApiResponse.success("메타마스크 지갑이 성공적으로 연결되었습니다.", response));
+        } catch (CustomException e) {
+            log.error("메타마스크 지갑 연결 중 사용자 정의 예외 발생: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("메타마스크 지갑 연결 중 예외 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("서버 오류: " + e.getMessage()));
+        }
+    }
+
+
 }
