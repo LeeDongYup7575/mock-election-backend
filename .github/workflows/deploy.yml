@@ -30,7 +30,8 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Create GCS Key JSON file
-        run: echo "${{ secrets.GCS_KEY_JSON }}" > gcs-key.json
+        run: echo "${{ secrets.GCS_KEY_JSON }}" > src/main/resources/gcs-key.json
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
