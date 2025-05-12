@@ -15,10 +15,6 @@ public class ChatService {
     @Autowired // MongoDB 저장소 주입
     private ChatMessageRepository chatMessageRepository;
 
-    // For user info - you'd need to create this repository
-//     @Autowired
-//     private UserRepository userRepository;
-
     // 메시지 저장
     public ChatMessage saveMessage(ChatMessage chatMessage) {
         // ID가 없거나 기본값(0)인 경우 null로 설정하여 MongoDB가 자동 생성하도록 함
@@ -49,16 +45,4 @@ public class ChatService {
         return false;
     }
 
-    // This would fetch user info from your MySQL database
-//    public Map<String, Object> getUserInfo(String userId) {
-//        Map<String, Object> userInfo = new HashMap<>();
-//        // In a real implementation, you'd query your user table
-//        // User user = userRepository.findById(userId).orElse(null);
-//
-//        // For now, return minimal data
-//        userInfo.put("userId", userId);
-//        userInfo.put("nickname", "User " + userId.substring(0, 5));
-//
-//        return userInfo;
-//    }
 }
