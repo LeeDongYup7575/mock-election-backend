@@ -17,6 +17,7 @@ public class Wallet {
     private String walletAddress;
     private String privateKey;
     private int tokenBalance;
+    private String walletType; // "INTERNAL" 또는 "METAMASK"
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
