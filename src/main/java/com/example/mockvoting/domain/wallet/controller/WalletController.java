@@ -1,7 +1,10 @@
 package com.example.mockvoting.domain.wallet.controller;
 
 import com.example.mockvoting.domain.wallet.dto.WalletResponseDTO;
+import com.example.mockvoting.domain.wallet.entity.Wallet;
+import com.example.mockvoting.domain.wallet.mapper.WalletMapper;
 import com.example.mockvoting.domain.wallet.service.WalletService;
+import com.example.mockvoting.domain.user.mapper.UserMapper;
 import com.example.mockvoting.exception.CustomException;
 import com.example.mockvoting.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,8 @@ import java.util.Map;
 public class WalletController {
 
     private final WalletService walletService;
+    private final WalletMapper walletMapper;
+    private final UserMapper userMapper;
 
     /**
      * 지갑 연결 API
@@ -346,5 +351,48 @@ public class WalletController {
         }
     }
 
+    /**
+     * 수동 토큰 발급 API (추가)
+     */
+    @PostMapping("/issue-token-manual")
+    public ResponseEntity<ApiResponse<WalletResponseDTO>> issueTokenManually(
+            HttpServletRequest request) {
+        try {
+            String userId = (String) request.getAttribute("userId");
+            log.info("수동 토큰 발급 요청: userId={}", userId);
 
+            // 지갑 확인
+            Wallet wallet = walletMapper.findByUserId(userId)
+                    .orElseThrow(() -> new CustomException("지갑이 연결되어 있지 않습니다."));
+
+            // 이미 토큰이 있는지 확인
+            if (wallet.getTokenBalance() > 0) {
+                return ResponseEntity.ok(ApiResponse.success("이미 토큰을 보유하고 있습니다.",
+                        WalletResponseDTO.builder()
+                                .walletAddress(wallet.getWalletAddress())
+                                .tokenBalance(wallet.getTokenBalance())
+                                .walletType(wallet.getWalletType())
+                                .connected(true)
+                                .build()));
+            }
+
+            // 토큰 발급
+            wallet.setTokenBalance(1);
+            walletMapper.updateTokenBalance(userId, 1);
+            userMapper.updateUserTokenStatus(userId, true);
+
+            return ResponseEntity.ok(ApiResponse.success("토큰이 발급되었습니다.",
+                    WalletResponseDTO.builder()
+                            .walletAddress(wallet.getWalletAddress())
+                            .tokenBalance(1)
+                            .walletType(wallet.getWalletType())
+                            .connected(true)
+                            .build()));
+
+        } catch (Exception e) {
+            log.error("수동 토큰 발급 오류: ", e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("토큰 발급 중 오류가 발생했습니다."));
+        }
+    }
 }

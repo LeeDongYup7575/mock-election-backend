@@ -81,7 +81,7 @@ public class VotingService {
                     return new CustomException("사용자를 찾을 수 없습니다.");
                 });
 
-        // 2. 이미 투표했는지 확인 (user 테이블의 is_election 필드로 확인)
+        // 2. 이미 투표했는지 확인
         if (user.isElection()) {
             log.warn("이미 투표한 사용자: userId={}", userId);
             throw new CustomException("이미 투표에 참여하셨습니다.");
@@ -94,57 +94,42 @@ public class VotingService {
                     return new CustomException("투표하려면 지갑 연결이 필요합니다.");
                 });
 
-        // 4. 지갑 타입에 따라 다르게 처리
+        // 4. 토큰 차감 처리
         try {
-            if ("METAMASK".equals(wallet.getWalletType())) {
-                // 메타마스크 지갑은 프론트엔드에서 트랜잭션을 전송하므로
-                // 백엔드에서는 블록체인 트랜잭션 확인 없이 투표 처리만 수행
-                // 프론트엔드에서 submitVote 함수 호출 전 블록체인 트랜잭션을 완료해야 함
-                log.info("메타마스크 지갑 사용자 투표 처리: userId={}", userId);
+            // 모든 지갑 타입에 대해 DB 토큰 차감
+            if (wallet.getTokenBalance() < 1) {
+                log.error("토큰 잔액 부족: userId={}, balance={}", userId, wallet.getTokenBalance());
+                throw new CustomException("투표에 필요한 토큰이 부족합니다.");
+            }
 
-                // 토큰 잔액 확인 (블록체인에서 가져온 잔액)
-                int balance = walletService.getTokenBalance(userId);
-                if (balance < 1) {
-                    log.error("토큰 잔액 부족: userId={}, balance={}", userId, balance);
-                    throw new CustomException("투표에 필요한 토큰이 부족합니다.");
-                }
-            } else {
-                // 내부 지갑은 서버에서 토큰 차감 처리
-                log.info("내부 지갑 사용자 토큰 차감 시작: userId={}", userId);
-                walletService.deductToken(userId, 1);
-            }
+            // DB에서 토큰 차감
+            int newBalance = wallet.getTokenBalance() - 1;
+            wallet.setTokenBalance(newBalance);
+            walletMapper.updateTokenBalance(userId, newBalance);
+            log.info("토큰 차감 완료: userId={}, amount=1, 남은 토큰={}", userId, newBalance);
+
         } catch (CustomException e) {
-            if (e.getMessage().contains("토큰 잔액이 부족합니다")) {
-                log.error("토큰 잔액 부족: userId={}", userId);
-                throw new CustomException("투표를 위한 토큰이 부족합니다. 토큰을 충전하세요.");
-            } else if (e.getMessage().contains("연결된 지갑이 없습니다")) {
-                log.error("연결된 지갑 없음: userId={}", userId);
-                throw new CustomException("투표하려면 지갑 연결이 필요합니다.");
-            } else {
-                throw e;
-            }
+            throw e;
         }
 
-        // 5. 후보자별 투표 통계가 존재하는지 확인
+        // 5. 후보자별 투표 통계 처리 (기존과 동일)
         VotingStats stats = votingMapper.getVotingStatsByCandidateId(sgId, candidateId);
 
         if (stats == null) {
-            // 해당 후보 통계가 없으면 새로 생성
             log.info("새 투표 통계 생성: sgId={}, candidateId={}", sgId, candidateId);
             VotingStats newStats = VotingStats.builder()
                     .sgId(sgId)
                     .candidateId(candidateId)
                     .voteCount(1)
-                    .percentage(0.0) // 임시 값
+                    .percentage(0.0)
                     .build();
             votingMapper.insertVotingStats(newStats);
         } else {
-            // 원자적으로 투표 수 증가
             log.info("투표 수 증가: sgId={}, candidateId={}, 현재 count={}", sgId, candidateId, stats.getVoteCount());
             votingMapper.incrementVoteCount(sgId, candidateId);
         }
 
-        // 6. 사용자의 투표 상태 업데이트 (user 테이블의 is_election 필드 사용)
+        // 6. 사용자의 투표 상태 업데이트
         log.info("사용자 투표 상태 업데이트: userId={}, isElection=true", userId);
         userMapper.updateUserElectionStatus(userId, true);
 
@@ -187,31 +172,45 @@ public class VotingService {
             throw new CustomException("메타마스크 지갑 투표만 이 API를 사용할 수 있습니다.");
         }
 
-        // 4. 블록체인 트랜잭션 검증 - 개선된 검증 로직
-        boolean isValidTransaction = walletService.verifyTransaction(transactionHash, wallet.getWalletAddress(), candidateId);
+        // 4. 블록체인 트랜잭션 검증 또는 DB 토큰 차감
+        if (transactionHash != null && !transactionHash.isEmpty() && !transactionHash.equals("INTERNAL")) {
+            // 실제 블록체인 트랜잭션이 있는 경우 검증
+            boolean isValidTransaction = walletService.verifyTransaction(
+                    transactionHash, wallet.getWalletAddress(), candidateId);
 
-        if (!isValidTransaction) {
-            log.error("유효하지 않은 블록체인 트랜잭션: userId={}, txHash={}", userId, transactionHash);
-            throw new CustomException("유효하지 않은 투표 트랜잭션입니다. 트랜잭션이 블록체인에 확인되지 않았거나 올바른 투표 트랜잭션이 아닙니다.");
+            if (!isValidTransaction) {
+                log.error("유효하지 않은 트랜잭션: userId={}, txHash={}", userId, transactionHash);
+                throw new CustomException("유효하지 않은 투표 트랜잭션입니다.");
+            }
+        } else {
+            // 블록체인 트랜잭션이 없는 경우 (임시 토큰 사용) - DB에서 토큰 차감
+            log.info("임시 토큰을 사용한 투표 처리: userId={}", userId);
+
+            if (wallet.getTokenBalance() < 1) {
+                log.error("토큰 잔액 부족: userId={}, balance={}", userId, wallet.getTokenBalance());
+                throw new CustomException("투표에 필요한 토큰이 부족합니다.");
+            }
+
+            // DB에서 토큰 차감
+            int newBalance = wallet.getTokenBalance() - 1;
+            wallet.setTokenBalance(newBalance);
+            walletMapper.updateTokenBalance(userId, newBalance);
+            log.info("DB 토큰 차감 완료: userId={}, 남은 토큰={}", userId, newBalance);
         }
 
-        log.info("메타마스크 투표 트랜잭션 검증 성공: userId={}, transactionHash={}", userId, transactionHash);
-
-        // 5. 후보자별 투표 통계가 존재하는지 확인
+        // 5. 후보자별 투표 통계 처리 (기존과 동일)
         VotingStats stats = votingMapper.getVotingStatsByCandidateId(sgId, candidateId);
 
         if (stats == null) {
-            // 해당 후보 통계가 없으면 새로 생성
             log.info("새 투표 통계 생성: sgId={}, candidateId={}", sgId, candidateId);
             VotingStats newStats = VotingStats.builder()
                     .sgId(sgId)
                     .candidateId(candidateId)
                     .voteCount(1)
-                    .percentage(0.0) // 임시 값
+                    .percentage(0.0)
                     .build();
             votingMapper.insertVotingStats(newStats);
         } else {
-            // 원자적으로 투표 수 증가
             log.info("투표 수 증가: sgId={}, candidateId={}, 현재 count={}", sgId, candidateId, stats.getVoteCount());
             votingMapper.incrementVoteCount(sgId, candidateId);
         }
@@ -220,16 +219,16 @@ public class VotingService {
         log.info("사용자 투표 상태 업데이트: userId={}, isElection=true", userId);
         userMapper.updateUserElectionStatus(userId, true);
 
-        // 7. 토큰 잔액 새로고침 시도 - 블록체인에서 실제 잔액 조회 후 DB 업데이트
-        try {
-            BigInteger currentBalance = walletService.getTokenBalanceFromBlockchain(wallet.getWalletAddress());
-            int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
-
-            // DB에 저장된 토큰 잔액 업데이트
-            walletMapper.updateTokenBalance(userId, tokenBalance);
-            log.info("투표 후 토큰 잔액 업데이트: userId={}, tokenBalance={}", userId, tokenBalance);
-        } catch (Exception e) {
-            log.warn("투표 후 토큰 잔액 조회 실패: {}", e.getMessage());
+        // 7. 토큰 잔액 새로고침 시도 (블록체인에서 실제 잔액 조회 후 DB 업데이트)
+        if (transactionHash != null && !transactionHash.isEmpty() && !transactionHash.equals("INTERNAL")) {
+            try {
+                BigInteger currentBalance = walletService.getTokenBalanceFromBlockchain(wallet.getWalletAddress());
+                int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
+                walletMapper.updateTokenBalance(userId, tokenBalance);
+                log.info("투표 후 토큰 잔액 업데이트: userId={}, tokenBalance={}", userId, tokenBalance);
+            } catch (Exception e) {
+                log.warn("투표 후 토큰 잔액 조회 실패: {}", e.getMessage());
+            }
         }
 
         // 8. 백분율 원자적 업데이트 비동기 처리
