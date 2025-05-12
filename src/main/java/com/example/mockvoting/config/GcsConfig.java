@@ -10,18 +10,14 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 
 @Configuration
 public class GcsConfig {
-
-    @Value("${gcs.key.location}")
-    private String keyPath;
-
     @Bean
     public Storage storage() throws IOException {
-        FileInputStream serviceAccount = new FileInputStream(keyPath);
-        GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+        String credentialsPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsPath));
         return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
 }
