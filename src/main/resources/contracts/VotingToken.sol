@@ -6,7 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VotingToken is ERC20, Ownable {
     mapping(address => bool) public hasReceivedInitialTokens;
-    uint256 public constant INITIAL_SUPPLY = 10 * 10**18; // 10 토큰 (18 decimals)
+
+    // 0.1 토큰 = 10^17 wei (UI에서는 1로 표시)
+    uint256 public constant INITIAL_SUPPLY = 100000000000000000; // 0.1 토큰
+    uint256 public constant VOTE_COST = 100000000000000000;     // 0.1 토큰
 
     constructor() ERC20("Voting Token", "VT") Ownable(msg.sender) {}
 
@@ -20,10 +23,9 @@ contract VotingToken is ERC20, Ownable {
     }
 
     function vote(uint256 candidateId) external returns (bool) {
-        uint256 voteCost = 1 * 10**18;
-        require(balanceOf(msg.sender) >= voteCost, "Insufficient token balance");
+        require(balanceOf(msg.sender) >= VOTE_COST, "Insufficient token balance");
 
-        _burn(msg.sender, voteCost);
+        _burn(msg.sender, VOTE_COST);
 
         emit VoteCast(msg.sender, candidateId);
 
