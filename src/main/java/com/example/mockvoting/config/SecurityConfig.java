@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/ws/**").permitAll() // WebSocket
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(
