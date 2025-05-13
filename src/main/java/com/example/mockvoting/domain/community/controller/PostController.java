@@ -1,9 +1,6 @@
 package com.example.mockvoting.domain.community.controller;
 
-import com.example.mockvoting.domain.community.dto.PostCreateRequestDTO;
-import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
-import com.example.mockvoting.domain.community.dto.PostDetailViewDTO;
-import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
+import com.example.mockvoting.domain.community.dto.*;
 import com.example.mockvoting.domain.community.service.PostService;
 import com.example.mockvoting.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -135,6 +132,28 @@ public class PostController {
         } catch (Exception e) {
             log.error("게시글 삭제 요청 처리 실패: postId={}, 요청자={}", id, requesterId, e);
             return ResponseEntity.internalServerError().body(ApiResponse.error("게시글 삭제 실패"));
+        }
+    }
+
+    /**
+     *  게시글 수정
+     */
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @RequestPart PostUpdateRequestDTO dto,
+                                                    @RequestPart(value="attachments", required = false) List<MultipartFile> attachments, HttpServletRequest request) {
+        String requesterId = (String) request.getAttribute("userId");
+        log.info("게시글 수정 요청: postId={}, 요청자={}", id, requesterId);
+
+        try {
+            postService.update(id, dto, requesterId, attachments);
+            log.info("게시글 수정 요청 처리 성공: postId={}, 요청자={}", id, requesterId);
+            return ResponseEntity.ok(ApiResponse.success("게시글 수정 성공", null));
+        } catch (AccessDeniedException e) {
+            log.warn("게시글 수정 권한 없음: postId={}, 요청자={}", id, requesterId);
+            return ResponseEntity.status(403).body(ApiResponse.error("수정 권한이 없습니다."));
+        } catch (Exception e) {
+            log.error("게시글 수정 요청 처리 실패: postId={}, 요청자={}", id, requesterId, e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("게시글 수정 실패"));
         }
     }
 

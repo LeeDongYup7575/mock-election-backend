@@ -167,4 +167,51 @@ public class PostService {
             attachment.setDeleted(true);
         }
     }
+
+    /**
+     *  게시글 수정
+     */
+    @Transactional
+    public void update(Long id, PostUpdateRequestDTO dto, String requesterId, List<MultipartFile> files) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다"));
+
+        if (!post.getAuthorId().equals(requesterId)) {
+            throw new AccessDeniedException("권한 없음");
+        }
+
+        // 썸네일이 없으면 기본 이미지 경로로 설정
+        String thumbnail = dto.getThumbnailUrl();
+        if (thumbnail == null || thumbnail.isBlank()) {
+            thumbnail = "https://storage.googleapis.com/visionvote_uploads/post/images/default_thumnail.jpg";
+        }
+
+        // 게시글 내용 업데이트
+        post.update(dto.getTitle(), dto.getContent(), thumbnail);
+
+        // 삭제된 파일 처리
+        if (dto.getDeleteAttachmentIds() != null && !dto.getDeleteAttachmentIds().isEmpty()) {
+            List<PostAttachment> toDelete = postAttachmentRepository.findAllById(dto.getDeleteAttachmentIds());
+            toDelete.forEach(att -> att.setDeleted(true));
+        }
+
+        // 새로운 파일 처리
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                String url = gcsService.upload("post_attachments", file);
+
+                PostAttachment attachment = PostAttachment.builder()
+                        .postId(id)
+                        .name(file.getOriginalFilename())
+                        .url(url)
+                        .size(file.getSize())
+                        .deleted(false)
+                        .build();
+
+                postAttachmentRepository.save(attachment);
+            }
+        }
+    }
+
+
 }
