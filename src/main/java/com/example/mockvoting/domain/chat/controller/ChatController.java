@@ -34,32 +34,31 @@ public class ChatController {
     @Autowired
     private JwtUtil jwtUtil;
 
-//  추후 삭제 : 로깅용 코드
+    //  추후 삭제 : 로깅용 코드
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     // STOMP를 통해 메시지 수신 시 처리
-    @MessageMapping("/chat.send")
-    @SendTo("/topic/public")
-    public ChatMessage sendMessage(ChatMessage chatMessage) {
+    @MessageMapping("/chat.send/{roomId}")
+    public void sendMessage(@DestinationVariable int roomId, ChatMessage chatMessage) {
+
+        // 로그 추가
+        System.out.println("채팅방 ID: " + roomId + ", 메시지 수신: " + chatMessage.getContent() + ", 보낸이: " + chatMessage.getSender_nickname());
+
+        // 채팅방 ID 설정
+        chatMessage.setChatroomId(roomId);
 
         // 메시지에 현재 시간 설정
         if (chatMessage.getSentAt() == null) {
             chatMessage.setSentAt(new Date());
         }
 
-        // 로그 추가
-        System.out.println("메시지 수신: " + chatMessage.getContent() + " 보낸이: " + chatMessage.getSender_nickname());
+        // 메시지 저장
+        ChatMessage savedMessage = chatService.saveMessage(chatMessage);
 
-        // 메시지 저장 및 반환
-        return chatService.saveMessage(chatMessage);
+        // 지정된 채팅방 구독자들에게 메시지 브로드캐스트
+        messagingTemplate.convertAndSend("/topic/chat/" + roomId, savedMessage);
     }
 
-    // REST API: 이전 채팅 메시지 조회
-    @GetMapping("/api/chat/history/{chatroomId}")
-    @ResponseBody
-    public List<ChatMessage> getChatHistory(@PathVariable int chatroomId) {
-        return chatService.getChatHistory(chatroomId);
-    }
 
     // 테스트용 REST 엔드포인트 추가 - WebSocket이 작동하지 않을 때 문제 확인용
     @GetMapping("/api/chat/test")

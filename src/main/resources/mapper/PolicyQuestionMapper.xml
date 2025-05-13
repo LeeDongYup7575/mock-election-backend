@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.mockvoting.domain.policyQuestion.mappers.PolicyQuestionMapper">
+    <!-- 모든 정책 질문 조회 -->
+    <select id="findAllPolicyQuestions" resultType="com.example.mockvoting.domain.policyQuestion.dto.PolicyQuestionDTO">
+        SELECT id, question
+        FROM visionvote.policy_question
+        ORDER BY id DESC
+    </select>
+
+    <!-- 특정 ID의 정책 질문 조회 -->
+    <select id="findPolicyQuestionById" resultType="com.example.mockvoting.domain.policyQuestion.dto.PolicyQuestionDTO">
+        SELECT id, question
+        FROM visionvote.policy_question
+        WHERE id = #{id}
+    </select>
+
+    <!-- 특정 정책 질문의 옵션 목록 조회 -->
+    <select id="findOptionsByQuestionId" resultType="com.example.mockvoting.domain.policyQuestion.dto.PolicyQuestionOptionsDTO">
+        SELECT id, question_id as questionId, options, count
+        FROM visionvote.policy_question_option
+        WHERE question_id = #{questionId}
+    </select>
+
+    <!-- 투표 카운트 증가 -->
+    <update id="incrementOptionCount">
+        UPDATE visionvote.policy_question_option
+        SET count = count + 1
+        WHERE id = #{optionId}
+    </update>
+
+    <!-- 투표 카운트 감소 (새로 추가) -->
+    <update id="decrementOptionCount">
+        UPDATE visionvote.policy_question_option
+        SET count = GREATEST(count - 1, 0) <!-- 음수 방지 -->
+        WHERE id = #{optionId}
+    </update>
+
+    <!-- 특정 옵션 조회 -->
+    <select id="findOptionById" resultType="com.example.mockvoting.domain.policyQuestion.dto.PolicyQuestionOptionsDTO">
+        SELECT id, question_id as questionId, options, count
+        FROM visionvote.policy_question_option
+        WHERE id = #{optionId}
+    </select>
+
+    <!-- 사용자의 옵션 선택 저장 -->
+    <insert id="updateSelectOption">
+        INSERT INTO visionvote.policy_question_select (user_id, question_id, select_option_id)
+        VALUES (#{userId}, #{questionId}, #{selectOptionId})
+            ON DUPLICATE KEY UPDATE select_option_id = #{selectOptionId}
+    </insert>
+
+    <!-- 사용자의 현재 선택 옵션 조회 -->
+    <select id="findUserSelection" resultType="com.example.mockvoting.domain.policyQuestion.dto.PolicyQuestionSelectDTO">
+        SELECT id, user_id as userId, question_id as questionId, select_option_id as selectOptionId
+        FROM visionvote.policy_question_select
+        WHERE user_id = #{userId} AND question_id = #{questionId}
+    </select>
+
+    <!-- 특정 ID의 사용자 선택 삭제 (새로 추가) -->
+    <delete id="deleteUserSelection">
+        DELETE FROM visionvote.policy_question_select
+        WHERE user_id = #{userId} AND question_id = #{questionId}
+    </delete>
+</mapper>

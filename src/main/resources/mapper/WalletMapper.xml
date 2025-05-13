@@ -6,10 +6,10 @@
     <insert id="insertWallet" parameterType="com.example.mockvoting.domain.wallet.entity.Wallet">
         INSERT INTO wallet (
             user_id, wallet_address, private_key,
-            token_balance, created_at, updated_at
+            token_balance, wallet_type, created_at, updated_at
         ) VALUES (
                      #{userId}, #{walletAddress}, #{privateKey},
-                     #{tokenBalance}, #{createdAt}, #{updatedAt}
+                     #{tokenBalance}, #{walletType}, #{createdAt}, #{updatedAt}
                  )
     </insert>
 
@@ -18,7 +18,7 @@
         SELECT
             id, user_id as userId, wallet_address as walletAddress,
             private_key as privateKey, token_balance as tokenBalance,
-            created_at as createdAt, updated_at as updatedAt
+            wallet_type as walletType, created_at as createdAt, updated_at as updatedAt
         FROM wallet
         WHERE user_id = #{userId}
             LIMIT 1
@@ -29,7 +29,7 @@
         SELECT
             id, user_id as userId, wallet_address as walletAddress,
             private_key as privateKey, token_balance as tokenBalance,
-            created_at as createdAt, updated_at as updatedAt
+            wallet_type as walletType, created_at as createdAt, updated_at as updatedAt
         FROM wallet
         WHERE wallet_address = #{walletAddress}
             LIMIT 1
@@ -42,6 +42,9 @@
         wallet_address = #{walletAddress},
         <if test="privateKey != null and privateKey != ''">
             private_key = #{privateKey},
+        </if>
+        <if test="walletType != null and walletType != ''">
+            wallet_type = #{walletType},
         </if>
         token_balance = #{tokenBalance},
         updated_at = NOW()
