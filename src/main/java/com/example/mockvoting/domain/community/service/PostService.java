@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +38,7 @@ public class PostService {
      *  게시글 상세 조회
      */
     @Transactional
-    public PostDetailViewDTO getPostDetail(Integer id, String viewedPostIds) {
+    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds) {
         // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
         List<String> viewedList = viewedPostIds.isEmpty()
                 ? Collections.emptyList()
@@ -64,6 +65,22 @@ public class PostService {
                 .post(detail)
                 .newViewedPostIds(updatedViewedPostIds)
                 .build();
+    }
+
+    /**
+     * 게시글 상세 조회(수정용)
+     */
+    public PostDetailResponseDTO getPostForEdit(Long postId, String requesterId) {
+        PostDetailResponseDTO detail = postMapper.selectPostDetailById(postId);
+
+        if (!detail.getAuthorId().equals(requesterId)) {
+            throw new AccessDeniedException("게시글 상세 조회(수정용) 권한이 없습니다.");
+        }
+
+        List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(postId);
+        detail.setAttachments(attachments);
+
+        return detail;
     }
 
     /**

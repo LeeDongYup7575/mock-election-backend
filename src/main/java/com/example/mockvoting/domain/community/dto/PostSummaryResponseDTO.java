@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostSummaryResponseDTO {
-    private Integer id;
-    private Integer categoryId;
+    private Long id;
+    private Long categoryId;
     private String title;
     private String authorId;
     private String thumbnailUrl;
