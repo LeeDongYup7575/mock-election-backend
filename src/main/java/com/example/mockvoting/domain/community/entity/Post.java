@@ -58,14 +58,10 @@ public class Post {
         this.createdAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
     public void update(String title, String content, String thumbnailUrl) {
         this.title = title;
         this.content = content;
         this.thumbnailUrl = thumbnailUrl;
+        this.updatedAt = LocalDateTime.now();
     }
 }
