@@ -22,8 +22,10 @@ public class GcsConfig {
             ClassPathResource path = new ClassPathResource(keyPath);
             System.out.println(path.exists() + " 찍힘?");
             GoogleCredentials credentials = GoogleCredentials.fromStream(path.getInputStream());
+            System.out.println("여기도 잘 찍히면 문제없는거아님?");
             return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
-        } catch (Exception e) {
+
+        } catch (Throwable e) {
             e.printStackTrace();
             System.out.println("==============여기임==================");
             throw new RuntimeException(e);
