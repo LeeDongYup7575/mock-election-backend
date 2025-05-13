@@ -43,8 +43,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         log.info("Setting up STOMP endpoints with allowed origin: {}", frontUrl);
         // WebSocket 연결을 위한 엔드포인트 설정
-        registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000") // '*' 대신 특정 URL
+        registry.addEndpoint("/wss")
+                .setAllowedOrigins(frontUrl) // '*' 대신 특정 URL
                 .withSockJS();
     }
 

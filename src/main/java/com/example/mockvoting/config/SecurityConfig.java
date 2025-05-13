@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
-                        .requestMatchers("/ws/**").permitAll() // WebSocket
+                        .requestMatchers("/wss/**").permitAll() // WebSocket
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(
@@ -62,7 +62,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList(frontUrl));
+        configuration.setAllowedOrigins(Arrays.asList("https://mock-election-frontend.web.app"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
