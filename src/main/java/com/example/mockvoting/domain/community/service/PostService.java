@@ -1,9 +1,11 @@
 package com.example.mockvoting.domain.community.service;
 
 import com.example.mockvoting.domain.community.dto.*;
+import com.example.mockvoting.domain.community.entity.CommunityVote;
 import com.example.mockvoting.domain.community.entity.Post;
 import com.example.mockvoting.domain.community.entity.PostAttachment;
 import com.example.mockvoting.domain.community.mapper.CategoryMapper;
+import com.example.mockvoting.domain.community.mapper.CommunityVoteMapper;
 import com.example.mockvoting.domain.community.mapper.PostAttachmentMapper;
 import com.example.mockvoting.domain.community.mapper.PostMapper;
 import com.example.mockvoting.domain.community.mapper.converter.PostDtoMapper;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +31,7 @@ public class PostService {
     private final PostMapper postMapper;
     private final CategoryMapper categoryMapper;
     private final PostAttachmentMapper postAttachmentMapper;
+    private final CommunityVoteMapper communityVoteMapper;
     private final PostRepository postRepository;
     private final PostAttachmentRepository postAttachmentRepository;
     private final PostDtoMapper postDtoMapper;
@@ -37,7 +41,7 @@ public class PostService {
      *  게시글 상세 조회
      */
     @Transactional
-    public PostDetailViewDTO getPostDetail(Integer id, String viewedPostIds) {
+    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds, String userId) {
         // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
         List<String> viewedList = viewedPostIds.isEmpty()
                 ? Collections.emptyList()
@@ -54,16 +58,42 @@ public class PostService {
                     : viewedPostIds + "-" + id;
         }
 
-        // 게시글 조회
+        // 4) 게시글 조회
         PostDetailResponseDTO detail = postMapper.selectPostDetailById(id);
-        // 첨부파일 조회
+        // 5) 첨부파일 조회
         List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(id);
         detail.setAttachments(attachments);
+
+        // [옵션] 6) 사용자 투표 정보 조회
+        if(userId != null) {
+            Byte vote = communityVoteMapper.selectVoteByVoterAndTarget(
+                    userId,
+                    CommunityVote.TargetType.POST,
+                    id
+            );
+            detail.setUserVote(vote);   // detail DTO에 사용자 투표 여부 정의 (1/-1/null)
+        }
 
         return PostDetailViewDTO.builder()
                 .post(detail)
                 .newViewedPostIds(updatedViewedPostIds)
                 .build();
+    }
+
+    /**
+     * 게시글 상세 조회(수정용)
+     */
+    public PostDetailResponseDTO getPostForEdit(Long postId, String requesterId) {
+        PostDetailResponseDTO detail = postMapper.selectPostDetailById(postId);
+
+        if (!detail.getAuthorId().equals(requesterId)) {
+            throw new AccessDeniedException("게시글 상세 조회(수정용) 권한이 없습니다.");
+        }
+
+        List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(postId);
+        detail.setAttachments(attachments);
+
+        return detail;
     }
 
     /**
@@ -150,4 +180,51 @@ public class PostService {
             attachment.setDeleted(true);
         }
     }
+
+    /**
+     *  게시글 수정
+     */
+    @Transactional
+    public void update(Long id, PostUpdateRequestDTO dto, String requesterId, List<MultipartFile> files) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다"));
+
+        if (!post.getAuthorId().equals(requesterId)) {
+            throw new AccessDeniedException("권한 없음");
+        }
+
+        // 썸네일이 없으면 기본 이미지 경로로 설정
+        String thumbnail = dto.getThumbnailUrl();
+        if (thumbnail == null || thumbnail.isBlank()) {
+            thumbnail = "https://storage.googleapis.com/visionvote_uploads/post/images/default_thumnail.jpg";
+        }
+
+        // 게시글 내용 업데이트
+        post.update(dto.getTitle(), dto.getContent(), thumbnail);
+
+        // 삭제된 파일 처리
+        if (dto.getDeleteAttachmentIds() != null && !dto.getDeleteAttachmentIds().isEmpty()) {
+            List<PostAttachment> toDelete = postAttachmentRepository.findAllById(dto.getDeleteAttachmentIds());
+            toDelete.forEach(att -> att.setDeleted(true));
+        }
+
+        // 새로운 파일 처리
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                String url = gcsService.upload("post_attachments", file);
+
+                PostAttachment attachment = PostAttachment.builder()
+                        .postId(id)
+                        .name(file.getOriginalFilename())
+                        .url(url)
+                        .size(file.getSize())
+                        .deleted(false)
+                        .build();
+
+                postAttachmentRepository.save(attachment);
+            }
+        }
+    }
+
+
 }

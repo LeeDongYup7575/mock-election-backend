@@ -11,16 +11,16 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostSummaryResponseDTO {
+public class PostCommentResponseDTO {
     private Long id;
-    private Long categoryId;
-    private String title;
+    private Long postId;
+    private Long parentId;
     private String authorId;
-    private String thumbnailUrl;
+    private String content;
+    private Integer depth;
     private Integer voteCount;
-    private Integer views;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    private String categoryName;
     private String authorNickname;
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.community.mapper.CommunityVoteMapper">
+    <select id="selectVoteByVoterAndTarget" resultType="java.lang.Byte">
+        SELECT vote
+        FROM community_vote
+        WHERE voter_id = #{voterId}
+          AND target_type = #{targetType}
+          AND target_id = #{targetId}
+    </select>
+
+</mapper>

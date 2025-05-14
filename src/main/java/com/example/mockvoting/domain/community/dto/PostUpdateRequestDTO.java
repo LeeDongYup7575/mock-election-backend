@@ -5,22 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostSummaryResponseDTO {
+public class PostUpdateRequestDTO {
     private Long id;
-    private Long categoryId;
     private String title;
-    private String authorId;
+    private String content;
     private String thumbnailUrl;
-    private Integer voteCount;
-    private Integer views;
-    private LocalDateTime createdAt;
-
-    private String categoryName;
-    private String authorNickname;
+    private List<Long> deleteAttachmentIds;
 }
