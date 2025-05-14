@@ -2,6 +2,7 @@ package com.example.mockvoting.domain.community.service;
 
 import com.example.mockvoting.domain.community.dto.PostCommentCreateRequestDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentResponseDTO;
+import com.example.mockvoting.domain.community.dto.PostCommentUpdateRequestDTO;
 import com.example.mockvoting.domain.community.entity.PostComment;
 import com.example.mockvoting.domain.community.mapper.PostCommentMapper;
 import com.example.mockvoting.domain.community.mapper.converter.PostCommentDtoMapper;
@@ -103,17 +104,22 @@ public class PostCommentService {
      *  댓글 등록
      */
     @Transactional
-    public Long save(Long PostId, PostCommentCreateRequestDTO dto) {
+    public Long save(Long PostId, PostCommentCreateRequestDTO dto, String requesterId) {
         int depth = 0;
         if(dto.getParentId() != null) {
             PostComment parentComment = postCommentRepository.findById(dto.getParentId())
                     .orElseThrow(() -> new RuntimeException("부모 댓글이 존재하지 않습니다."));
             depth = parentComment.getDepth() + 1;
         }
+        if (depth > 4) {
+            throw new IllegalArgumentException("답글은 최대 depth 4까지만 작성할 수 있습니다.");
+        }
+        dto.setAuthorId(requesterId);
         dto.setPostId(PostId);
         dto.setDepth(depth);
 
         PostComment postComment = postCommentDtoMapper.toEntity(dto);
+
         Long id = postCommentRepository.save(postComment).getId();
 
         return id;
@@ -133,4 +139,20 @@ public class PostCommentService {
 
         comment.setDeleted(true);
     }
+
+    /**
+     *  댓글 수정
+     */
+    @Transactional
+    public void update(Long commentId, String requesterId, PostCommentUpdateRequestDTO dto) {
+        PostComment comment = postCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다."));
+
+        if (!comment.getAuthorId().equals(requesterId)) {
+            throw new SecurityException("댓글 수정 권한이 없습니다.");
+        }
+
+        comment.update(dto.getContent());
+    }
+
 }

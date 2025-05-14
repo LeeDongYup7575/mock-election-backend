@@ -55,4 +55,8 @@ public class PostComment {
         this.createdAt = LocalDateTime.now();
     }
 
+    public void update(String content) {
+        this.content = content;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -2,6 +2,7 @@ package com.example.mockvoting.domain.community.controller;
 
 import com.example.mockvoting.domain.community.dto.PostCommentCreateRequestDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentResponseDTO;
+import com.example.mockvoting.domain.community.dto.PostCommentUpdateRequestDTO;
 import com.example.mockvoting.domain.community.entity.PostComment;
 import com.example.mockvoting.domain.community.service.PostCommentService;
 import com.example.mockvoting.response.ApiResponse;
@@ -66,11 +67,12 @@ public class PostCommentController {
      *  댓글 등록
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> create(@PathVariable Long postId, @Valid @RequestBody PostCommentCreateRequestDTO dto) {
+    public ResponseEntity<ApiResponse<Long>> create(@PathVariable Long postId, @Valid @RequestBody PostCommentCreateRequestDTO dto, HttpServletRequest request) {
+        String userId = (String) request.getAttribute("userId");
         log.info("댓글 등록 요청: postId={}, 요청자={}, 댓글 내용={}", postId, dto.getAuthorId(), dto.getContent());
 
         try {
-            Long commentId = postCommentService.save(postId, dto);
+            Long commentId = postCommentService.save(postId, dto, userId);
             log.info("댓글 등록 요청 처리 성공: id={}", commentId);
             return ResponseEntity.ok(ApiResponse.success("댓글 등록 성공", commentId));
         } catch (Exception e) {
@@ -83,7 +85,7 @@ public class PostCommentController {
      *  댓글 삭제
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long postId, @PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long postId, @PathVariable Long id, HttpServletRequest request) {
         String userId = (String) request.getAttribute("userId");
         log.info("댓글 삭제 요청: postId={}, commentId={}, 요청자={}", postId, id, userId);
         try {
@@ -98,4 +100,31 @@ public class PostCommentController {
             return ResponseEntity.internalServerError().body(ApiResponse.error("댓글 삭제 실패"));
         }
     }
+
+    /**
+     *  댓글 수정
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Long>> update(
+            @PathVariable Long postId,
+            @PathVariable Long id,
+            @Valid @RequestBody PostCommentUpdateRequestDTO dto,
+            HttpServletRequest request) {
+
+        String userId = (String) request.getAttribute("userId");
+        log.info("댓글 수정 요청: postId={}, commentId={}, 요청자={}", postId, id, userId);
+
+        try {
+            postCommentService.update(id, userId, dto);
+            log.info("댓글 수정 성공: commentId={}", id);
+            return ResponseEntity.ok(ApiResponse.success("댓글 수정 성공", id));
+        } catch (SecurityException e) {
+            log.warn("댓글 수정 권한 없음: commentId={}, 요청자={}", id, userId);
+            return ResponseEntity.status(403).body(ApiResponse.error("댓글 수정 권한이 없습니다."));
+        } catch (Exception e) {
+            log.error("댓글 수정 실패: commentId={}, 요청자={}", id, userId, e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("댓글 수정 실패"));
+        }
+    }
+
 }
