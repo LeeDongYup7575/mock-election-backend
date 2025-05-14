@@ -57,3 +57,4 @@ target/
 mvnw
 mvnw.cmd
 .gitattributes
+encoded.txt
