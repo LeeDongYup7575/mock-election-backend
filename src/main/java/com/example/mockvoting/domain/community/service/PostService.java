@@ -1,9 +1,11 @@
 package com.example.mockvoting.domain.community.service;
 
 import com.example.mockvoting.domain.community.dto.*;
+import com.example.mockvoting.domain.community.entity.CommunityVote;
 import com.example.mockvoting.domain.community.entity.Post;
 import com.example.mockvoting.domain.community.entity.PostAttachment;
 import com.example.mockvoting.domain.community.mapper.CategoryMapper;
+import com.example.mockvoting.domain.community.mapper.CommunityVoteMapper;
 import com.example.mockvoting.domain.community.mapper.PostAttachmentMapper;
 import com.example.mockvoting.domain.community.mapper.PostMapper;
 import com.example.mockvoting.domain.community.mapper.converter.PostDtoMapper;
@@ -29,6 +31,7 @@ public class PostService {
     private final PostMapper postMapper;
     private final CategoryMapper categoryMapper;
     private final PostAttachmentMapper postAttachmentMapper;
+    private final CommunityVoteMapper communityVoteMapper;
     private final PostRepository postRepository;
     private final PostAttachmentRepository postAttachmentRepository;
     private final PostDtoMapper postDtoMapper;
@@ -38,7 +41,7 @@ public class PostService {
      *  게시글 상세 조회
      */
     @Transactional
-    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds) {
+    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds, String userId) {
         // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
         List<String> viewedList = viewedPostIds.isEmpty()
                 ? Collections.emptyList()
@@ -55,11 +58,21 @@ public class PostService {
                     : viewedPostIds + "-" + id;
         }
 
-        // 게시글 조회
+        // 4) 게시글 조회
         PostDetailResponseDTO detail = postMapper.selectPostDetailById(id);
-        // 첨부파일 조회
+        // 5) 첨부파일 조회
         List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(id);
         detail.setAttachments(attachments);
+
+        // [옵션] 6) 사용자 투표 정보 조회
+        if(userId != null) {
+            Byte vote = communityVoteMapper.selectVoteByVoterAndTarget(
+                    userId,
+                    CommunityVote.TargetType.POST,
+                    id
+            );
+            detail.setUserVote(vote);   // detail DTO에 사용자 투표 여부 정의 (1/-1/null)
+        }
 
         return PostDetailViewDTO.builder()
                 .post(detail)

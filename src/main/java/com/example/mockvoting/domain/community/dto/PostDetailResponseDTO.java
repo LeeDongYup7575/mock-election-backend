@@ -28,4 +28,5 @@ public class PostDetailResponseDTO {
     private String authorNickname;
     private List<PostAttachmentResponseDTO> attachments;
     private Integer commentCount;
+    private Byte userVote; // 1: upvote, -1: downvote, null: 투표 안함
 }

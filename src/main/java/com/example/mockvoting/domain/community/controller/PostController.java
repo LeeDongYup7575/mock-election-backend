@@ -31,13 +31,14 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDetailResponseDTO>> getPostDetail(
             @PathVariable Long id,
+            @RequestParam(value = "userId", required = false) String userId,
             @CookieValue(value = "viewedPostIds", defaultValue = "") String viewedPostIds,
             HttpServletResponse response) {
 
         log.info("게시글 [{}] 상세 조회 요청", id);
 
         try {
-            PostDetailViewDTO result = postService.getPostDetail(id, viewedPostIds);
+            PostDetailViewDTO result = postService.getPostDetail(id, viewedPostIds, userId);
 
             // 새 쿠키값이 있을 때만 HTTP 응답에 추가
             if (result.getNewViewedPostIds() != null) {
