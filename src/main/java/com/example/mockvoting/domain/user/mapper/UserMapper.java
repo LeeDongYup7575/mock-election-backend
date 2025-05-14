@@ -17,8 +17,6 @@ public interface UserMapper {
     // 이메일로 사용자 조회
     Optional<User> findByEmail(String email);
 
-    // 사용자 활성 상태 업데이트 (회원 탈퇴)
-    void updateUserActiveStatus(@Param("userId") String userId, @Param("active") boolean active);
 
     // 회원 완전 삭제
     void deleteUser(@Param("userId") String userId);

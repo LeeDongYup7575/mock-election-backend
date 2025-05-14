@@ -37,13 +37,6 @@
         WHERE email = #{email}
     </select>
 
-    <!-- 사용자 활성 상태 업데이트 (회원 탈퇴) -->
-    <update id="updateUserActiveStatus">
-        UPDATE user
-        SET active = #{active}
-        WHERE user_id = #{userId}
-    </update>
-
     <delete id="deleteUser">
         delete from user where user_id = #{userId}
     </delete>
@@ -71,4 +64,5 @@
         SET has_received_token = #{hasReceivedToken}
         WHERE user_id = #{userId}
     </update>
+
 </mapper>

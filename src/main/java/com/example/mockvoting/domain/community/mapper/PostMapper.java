@@ -10,12 +10,12 @@ import java.util.List;
 @Mapper
 public interface PostMapper {
     // 게시글 상세 조회
-    PostDetailResponseDTO selectPostDetailById(@Param("id") Integer id);
+    PostDetailResponseDTO selectPostDetailById(@Param("id") Long id);
 
     // 카테고리별 게시글 조회
     List<PostSummaryResponseDTO> selectPostsByCategory(@Param("categoryCode") String categoryCode,
                                                        @Param("offset") int offset,
                                                        @Param("limit") int limit);
     // 게시글 조회수 업데이트
-    void updateViewCountById(@Param("id") Integer id);
+    void updateViewCountById(@Param("id") Long id);
 }
