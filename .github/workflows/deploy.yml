@@ -30,6 +30,10 @@ jobs:
         run: |
           mkdir -p src/main/resources
           echo "${{ secrets.APP_PROPERTIES_BASE64 }}" | tr -d '\n' | base64 -d > src/main/resources/application.properties
+      - name: Decode GCS key file
+        run: |
+          echo "${{ secrets.GCS_KEY_JSON }}" | tr -d '\n' | base64 -d > src/main/resources/gcs-key.json
+
 
       - name: Build with Maven
         run: mvn clean package -DskipTests
