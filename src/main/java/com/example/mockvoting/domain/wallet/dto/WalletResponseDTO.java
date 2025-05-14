@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class WalletResponseDTO {
     private String walletAddress;
     private int tokenBalance;
+    private String walletType; // "INTERNAL" 또는 "METAMASK"
     private boolean connected;
 }
