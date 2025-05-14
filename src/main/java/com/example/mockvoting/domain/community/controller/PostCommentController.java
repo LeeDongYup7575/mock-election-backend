@@ -6,6 +6,7 @@ import com.example.mockvoting.domain.community.entity.PostComment;
 import com.example.mockvoting.domain.community.service.PostCommentService;
 import com.example.mockvoting.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +66,7 @@ public class PostCommentController {
      *  댓글 등록
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> create(@PathVariable Long postId, @RequestBody PostCommentCreateRequestDTO dto) {
+    public ResponseEntity<ApiResponse<Long>> create(@PathVariable Long postId, @Valid @RequestBody PostCommentCreateRequestDTO dto) {
         log.info("댓글 등록 요청: postId={}, 요청자={}, 댓글 내용={}", postId, dto.getAuthorId(), dto.getContent());
 
         try {
@@ -93,7 +94,6 @@ public class PostCommentController {
             log.warn("댓글 삭제 권한 없음: commentId={}, 요청자={}", id, userId);
             return ResponseEntity.status(403).body(ApiResponse.error("댓글 삭제 권한이 없습니다."));
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("댓글 삭제 실패: commentId={}, 요청자={}", id, userId, e);
             return ResponseEntity.internalServerError().body(ApiResponse.error("댓글 삭제 실패"));
         }
