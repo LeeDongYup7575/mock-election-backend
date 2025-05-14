@@ -1,24 +1,95 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mockvoting.domain.community.mapper.PostCommentMapper">
-    <select id="selectTopLevelCommentsByPostId" resultType="com.example.mockvoting.domain.community.dto.PostCommentResponseDTO">
-        SELECT
-            post_comment.id,
-            post_comment.post_id,
-            post_comment.parent_id,
-            post_comment.author_id,
-            post_comment.content,
-            post_comment.depth,
-            (post_comment.upvotes - post_comment.downvotes) AS vote_count,
-            post_comment.created_at,
-            post_comment.updated_at,
-            user.nickname AS author_nickname
-        FROM post_comment
-                 JOIN user ON post_comment.author_id = user.user_id
-        WHERE post_comment.post_id = #{postId}
-          AND post_comment.depth = 0
-          AND post_comment.is_deleted = FALSE
-        ORDER BY post_comment.created_at ASC
-            LIMIT #{limit} OFFSET #{offset}
-    </select>
+<!--    <select id="selectTopLevelCommentsByPostId" resultType="com.example.mockvoting.domain.community.dto.PostCommentResponseDTO">-->
+<!--        SELECT-->
+<!--            post_comment.id,-->
+<!--            post_comment.post_id,-->
+<!--            post_comment.parent_id,-->
+<!--            post_comment.author_id,-->
+<!--            post_comment.content,-->
+<!--            post_comment.depth,-->
+<!--            (post_comment.upvotes - post_comment.downvotes) AS vote_count,-->
+<!--            post_comment.created_at,-->
+<!--            post_comment.updated_at,-->
+<!--            user.nickname AS author_nickname-->
+<!--        FROM post_comment-->
+<!--                 JOIN user ON post_comment.author_id = user.user_id-->
+<!--        WHERE post_comment.post_id = #{postId}-->
+<!--          AND post_comment.depth = 0-->
+<!--          AND post_comment.is_deleted = FALSE-->
+<!--        ORDER BY post_comment.created_at ASC-->
+<!--            LIMIT #{limit} OFFSET #{offset}-->
+<!--    </select>-->
+
+        <!-- 1) 최상위 댓글 조회 -->
+        <select id="selectTopLevelComments"
+                parameterType="map"
+                resultType="com.example.mockvoting.domain.community.dto.PostCommentResponseDTO">
+            WITH RECURSIVE alive_tree AS (
+                -- 1) 살아있는 댓글을 모두 모은다
+                SELECT id, parent_id
+                FROM post_comment
+                WHERE post_id = #{postId}
+                AND is_deleted = FALSE
+
+                UNION ALL
+
+                -- 2) 그 댓글들의 조상(ancestor)을 계속 타고 올라간다
+                SELECT pc.id, pc.parent_id
+                FROM post_comment pc
+                     JOIN alive_tree atree ON atree.parent_id = pc.id
+            )
+            SELECT
+                pc.id,
+                pc.parent_id      AS parentId,
+                pc.post_id        AS postId,
+                pc.author_id      AS authorId,
+                pc.content,
+                pc.depth,
+                pc.is_deleted     AS isDeleted,
+                (pc.upvotes - pc.downvotes) AS voteCount,
+                pc.created_at     AS createdAt,
+                pc.updated_at     AS updatedAt,
+                u.nickname        AS authorNickname
+            FROM post_comment pc
+                 JOIN user u ON pc.author_id = u.user_id
+
+            -- 최상위(depth=0) 중에서
+            WHERE pc.post_id = #{postId}
+            AND pc.depth = 0
+
+            -- alive_tree에 포함된 id만 가져온다 (직접 살아있거나 조상이 살아있는)
+            AND pc.id IN (SELECT id FROM alive_tree)
+
+            ORDER BY pc.created_at ASC
+                LIMIT #{limit} OFFSET #{offset}
+        </select>
+
+        <!-- 2) parentId 목록으로 자식 댓글(depth>0) 조회 -->
+        <select id="selectCommentsByParentIds"
+                parameterType="list"
+                resultType="com.example.mockvoting.domain.community.dto.PostCommentResponseDTO">
+            SELECT
+                pc.id,
+                pc.parent_id        AS parentId,
+                pc.post_id          AS postId,
+                pc.author_id        AS authorId,
+                pc.content,
+                pc.depth,
+                pc.is_deleted       AS isDeleted,
+                (pc.upvotes - pc.downvotes) AS voteCount,
+                pc.created_at       AS createdAt,
+                pc.updated_at       AS updatedAt,
+                u.nickname          AS authorNickname
+            FROM post_comment pc
+            JOIN user u ON pc.author_id = u.user_id
+            WHERE pc.parent_id IN
+                <foreach item="id" collection="list" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            ORDER BY pc.created_at ASC
+        </select>
+
+
 </mapper>

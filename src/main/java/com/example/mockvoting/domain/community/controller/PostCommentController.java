@@ -23,16 +23,36 @@ public class PostCommentController {
     /**
      *  최상위 댓글 조회
      */
+//    @GetMapping
+//    public ResponseEntity<ApiResponse<List<PostCommentResponseDTO>>> getTopLevelComments(
+//            @PathVariable Long postId,
+//            @RequestParam(defaultValue = "0") int offset,
+//            @RequestParam(defaultValue = "10") int limit) {
+//
+//        log.info("댓글 목록 요청: postId={}, offset={}, limit={}", postId, offset, limit);
+//
+//        try {
+//            List<PostCommentResponseDTO> comments = postCommentService.getTopLevelCommentsByPostId(postId, offset, limit);
+//            log.info("댓글 목록 요청 처리 성공: postId={}", postId);
+//            return ResponseEntity.ok(ApiResponse.success("댓글 목록 조회 성공", comments));
+//        } catch (Exception e) {
+//            log.error("댓글 목록 요청 처리 실패", e);
+//            return ResponseEntity.internalServerError().body(ApiResponse.error("댓글 목록 조회 실패"));
+//        }
+//    }
+
+    /**
+     *  댓글 조회
+     */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PostCommentResponseDTO>>> getTopLevelComments(
+    public ResponseEntity<ApiResponse<List<PostCommentResponseDTO>>> getAllComments(
             @PathVariable Long postId,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "10") int limit) {
 
         log.info("댓글 목록 요청: postId={}, offset={}, limit={}", postId, offset, limit);
-
         try {
-            List<PostCommentResponseDTO> comments = postCommentService.getTopLevelCommentsByPostId(postId, offset, limit);
+            List<PostCommentResponseDTO> comments = postCommentService.getCommentsWithReplies(postId, offset, limit);
             log.info("댓글 목록 요청 처리 성공: postId={}", postId);
             return ResponseEntity.ok(ApiResponse.success("댓글 목록 조회 성공", comments));
         } catch (Exception e) {

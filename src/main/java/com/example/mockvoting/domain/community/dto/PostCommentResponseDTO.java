@@ -21,6 +21,7 @@ public class PostCommentResponseDTO {
     private Integer voteCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean isDeleted;
 
     private String authorNickname;
 }
