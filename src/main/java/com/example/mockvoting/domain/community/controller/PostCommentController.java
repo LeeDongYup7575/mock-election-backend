@@ -49,12 +49,13 @@ public class PostCommentController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<PostCommentResponseDTO>>> getAllComments(
             @PathVariable Long postId,
+            @RequestParam(value = "userId", required = false) String userId,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "10") int limit) {
 
         log.info("댓글 목록 요청: postId={}, offset={}, limit={}", postId, offset, limit);
         try {
-            List<PostCommentResponseDTO> comments = postCommentService.getCommentsWithReplies(postId, offset, limit);
+            List<PostCommentResponseDTO> comments = postCommentService.getCommentsWithReplies(postId, offset, limit, userId);
             log.info("댓글 목록 요청 처리 성공: postId={}", postId);
             return ResponseEntity.ok(ApiResponse.success("댓글 목록 조회 성공", comments));
         } catch (Exception e) {

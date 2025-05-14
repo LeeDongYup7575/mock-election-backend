@@ -1,9 +1,12 @@
 package com.example.mockvoting.domain.community.service;
 
+import com.example.mockvoting.domain.community.dto.CommunityVoteResultDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentCreateRequestDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentUpdateRequestDTO;
+import com.example.mockvoting.domain.community.entity.CommunityVote;
 import com.example.mockvoting.domain.community.entity.PostComment;
+import com.example.mockvoting.domain.community.mapper.CommunityVoteMapper;
 import com.example.mockvoting.domain.community.mapper.PostCommentMapper;
 import com.example.mockvoting.domain.community.mapper.converter.PostCommentDtoMapper;
 import com.example.mockvoting.domain.community.repository.PostCommentRepository;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostCommentService {
     private final PostCommentMapper postCommentMapper;
+    private final CommunityVoteMapper communityVoteMapper;
     private final PostCommentRepository postCommentRepository;
     private final PostCommentDtoMapper postCommentDtoMapper;
 
@@ -34,7 +38,7 @@ public class PostCommentService {
      *  댓글 조회
      */
     @Transactional(readOnly = true)
-    public List<PostCommentResponseDTO> getCommentsWithReplies(Long postId, int offset, int limit) {
+    public List<PostCommentResponseDTO> getCommentsWithReplies(Long postId, int offset, int limit, String userId) {
         // 1) 최상위 댓글
         Map<String,Object> params = Map.of("postId", postId, "offset", offset, "limit", limit);
         List<PostCommentResponseDTO> top = postCommentMapper.selectTopLevelComments(params);
@@ -67,7 +71,24 @@ public class PostCommentService {
             }
         }
 
-        // 5) 최종 트리 재귀 순회로 결과 리스트 생성
+        // 5) 사용자 투표 정보 매핑 (userVote)
+        if (userId != null) {
+            List<Long> ids = all.stream().map(PostCommentResponseDTO::getId).toList();
+            if (!ids.isEmpty()) {
+                List<CommunityVoteResultDTO> voteList = communityVoteMapper.selectVotesByVoterAndTargetIds(
+                        userId, CommunityVote.TargetType.POST_COMMENT, ids
+                );
+
+                Map<Long, Byte> voteMap = voteList.stream()
+                        .collect(Collectors.toMap(CommunityVoteResultDTO::getTargetId, CommunityVoteResultDTO::getVote));
+
+                for (PostCommentResponseDTO comment : all) {
+                    comment.setUserVote(voteMap.get(comment.getId())); // null-safe
+                }
+            }
+        }
+
+        // 6) 최종 트리 재귀 순회로 결과 리스트 생성
         List<PostCommentResponseDTO> result = new ArrayList<>();
         for (PostCommentResponseDTO root : top) {
             if (!toRemove.contains(root.getId())) {
