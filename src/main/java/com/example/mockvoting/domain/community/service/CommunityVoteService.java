@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.community.service;
 
+import com.example.mockvoting.domain.common.Votable;
 import com.example.mockvoting.domain.community.dto.CommunityVoteRequestDTO;
 import com.example.mockvoting.domain.community.entity.CommunityVote;
 import com.example.mockvoting.domain.community.entity.Post;
@@ -37,6 +38,7 @@ public class CommunityVoteService {
         }
     }
 
+    // 게시글 투표 처리
     private void processPostVote(CommunityVoteRequestDTO dto, String voterId) {
         Long targetId = dto.getTargetId();
         byte newVote = dto.getVote();
@@ -72,17 +74,17 @@ public class CommunityVoteService {
         postRepository.save(post);
     }
 
-    private void applyVote(Post post, byte delta) {
+    private void applyVote(Votable target, byte delta) {
         switch (delta) {
-            case 1 -> post.setUpvotes(post.getUpvotes() + 1);        // upvotes +1
-            case -1 -> post.setDownvotes(post.getDownvotes() + 1);   // downvotes +1
+            case 1 -> target.setUpvotes(target.getUpvotes() + 1);        // upvotes +1
+            case -1 -> target.setDownvotes(target.getDownvotes() + 1);   // downvotes +1
             case 2 -> {  // downvote → upvote
-                post.setUpvotes(post.getUpvotes() + 1);
-                post.setDownvotes(post.getDownvotes() - 1);
+                target.setUpvotes(target.getUpvotes() + 1);
+                target.setDownvotes(target.getDownvotes() - 1);
             }
             case -2 -> { // upvote → downvote
-                post.setUpvotes(post.getUpvotes() - 1);
-                post.setDownvotes(post.getDownvotes() + 1);
+                target.setUpvotes(target.getUpvotes() - 1);
+                target.setDownvotes(target.getDownvotes() + 1);
             }
             default -> {
                 // 아무 것도 하지 않음 (예외 처리 필요 없다면 비워둬도 됨)
