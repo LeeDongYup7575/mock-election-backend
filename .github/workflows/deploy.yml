@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: key-prism-457602-v5
   REGION: asia-northeast3
-  SERVICE_NAME: mock-election
+  SERVICE_NAME: mock
   IMAGE_NAME: spring-backend
   REPOSITORY_NAME: spring-backend
 
