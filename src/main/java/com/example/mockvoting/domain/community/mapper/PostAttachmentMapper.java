@@ -9,5 +9,5 @@ import java.util.List;
 @Mapper
 public interface PostAttachmentMapper {
     // 게시글별 첨부파일 목록 조회
-    List<PostAttachmentResponseDTO> selectAttachmentsByPostId(@Param("postId") Integer postId);
+    List<PostAttachmentResponseDTO> selectAttachmentsByPostId(@Param("postId") Long postId);
 }

@@ -13,8 +13,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostDetailResponseDTO {
-    private Integer id;
-    private Integer categoryId;
+    private Long id;
+    private Long categoryId;
     private String title;
     private String content;
     private String authorId;
@@ -28,4 +28,5 @@ public class PostDetailResponseDTO {
     private String authorNickname;
     private List<PostAttachmentResponseDTO> attachments;
     private Integer commentCount;
+    private Byte userVote; // 1: upvote, -1: downvote, null: 투표 안함
 }
