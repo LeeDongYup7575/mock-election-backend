@@ -20,6 +20,7 @@ public class ElectionController {
     @GetMapping("/list")
     public ResponseEntity<List<Election>> getElectionList(){
         List<Election> electionList = electionService.findAllElections();
+
         return ResponseEntity.ok(electionList);
     }
 
