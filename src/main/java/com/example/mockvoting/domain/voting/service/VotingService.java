@@ -344,13 +344,13 @@ public class VotingService {
     public void scheduleStatisticsRecalculation() {
         try {
             // 모든 활성 투표 ID 조회
-            List<String> activeVotingIds = votingMapper.findAllActiveVotingIds();
-            log.info("정기 투표 통계 재계산 시작: 활성 투표 수={}", activeVotingIds.size());
+//            List<String> activeVotingIds = votingMapper.findAllActiveVotingIds();
+//            log.info("정기 투표 통계 재계산 시작: 활성 투표 수={}", activeVotingIds.size());
 
             // 각 투표에 대해 통계 재계산
-            for (String sgId : activeVotingIds) {
-                updateStatistics(sgId);
-            }
+//            for (String sgId : activeVotingIds) {
+//                updateStatistics(sgId);
+//            }
 
             log.info("정기 투표 통계 재계산 완료");
         } catch (Exception e) {
