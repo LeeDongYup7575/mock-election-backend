@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface VotingMapper {
@@ -40,4 +41,21 @@ public interface VotingMapper {
 
     // 활성화된 모든 투표 ID 조회 (스케줄링용)
     List<String> findAllActiveVotingIds();
+
+    // ===== 공약별 투표 관련 메서드 추가 =====
+
+    // 특정 공약의 투표 통계 조회
+    VotingStats getVotingStatsByPolicyId(@Param("sgId") String sgId, @Param("policyId") Integer policyId);
+
+    // 공약별 투표 통계 생성
+    void insertPolicyVotingStats(VotingStats votingStats);
+
+    // 공약 투표수 증가
+    void incrementPolicyVoteCount(@Param("sgId") String sgId, @Param("policyId") Integer policyId);
+
+    // 정당별 투표 통계 조회
+    List<Map<String, Object>> getVotingStatsByParty(@Param("sgId") String sgId);
+
+    // 정당별 공약별 투표 통계 조회
+    List<Map<String, Object>> getDetailedVotingStatsByParty(@Param("sgId") String sgId);
 }
