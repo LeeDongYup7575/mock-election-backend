@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mockvoting.domain.community.mapper.CommunityVoteMapper">
+    <!-- 하나의 타겟에 대해 투표 정보 조회-->
     <select id="selectVoteByVoterAndTarget" resultType="java.lang.Byte">
         SELECT vote
         FROM community_vote
@@ -9,4 +10,19 @@
           AND target_id = #{targetId}
     </select>
 
+    <!-- 여러 개의 타겟에 대해 투표 정보 조회-->
+    <select id="selectVotesByVoterAndTargetIds" resultType="com.example.mockvoting.domain.community.dto.CommunityVoteResultDTO">
+        SELECT
+            target_id,
+            vote
+        FROM
+            community_vote
+        WHERE
+            voter_id = #{voterId}
+            AND target_type = #{targetType}
+            AND target_id IN
+            <foreach item="id" collection="targetIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+    </select>
 </mapper>

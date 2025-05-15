@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.community.entity;
 
+import com.example.mockvoting.domain.common.Votable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Post {
+public class Post implements Votable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,4 +65,16 @@ public class Post {
         this.thumbnailUrl = thumbnailUrl;
         this.updatedAt = LocalDateTime.now();
     }
+
+    @Override
+    public int getUpvotes() { return this.upvotes; }
+
+    @Override
+    public int getDownvotes() { return this.downvotes; }
+
+    @Override
+    public void setUpvotes(int upvotes) { this.upvotes = upvotes; }
+
+    @Override
+    public void setDownvotes(int downvotes) { this.downvotes = downvotes; }
 }
