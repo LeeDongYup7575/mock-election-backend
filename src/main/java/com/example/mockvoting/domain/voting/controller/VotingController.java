@@ -81,12 +81,13 @@ public class VotingController {
             HttpServletRequest request) {
 
         String userId = (String) request.getAttribute("userId");
-        log.info("메타마스크 투표 요청: userId={}, sgId={}, candidateId={}, txHash={}",
+        log.info("메타마스크 투표 요청: userId={}, sgId={}, policyId={}, txHash={}",
                 userId, sgId, votingRequest.getCandidateId(), votingRequest.getTransactionHash());
 
+        // candidateId가 실제로는 policyId임
         VotingStatsDTO result = votingService.verifyAndSubmitMetaMaskVoting(
                 sgId,
-                votingRequest.getCandidateId(),
+                votingRequest.getCandidateId(),  // 이것이 실제로는 policyId
                 userId,
                 votingRequest.getTransactionHash()
         );

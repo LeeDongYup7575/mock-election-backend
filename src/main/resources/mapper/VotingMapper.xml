@@ -47,8 +47,11 @@
     <!-- 특정 선거의 후보자별 투표 수 조회 -->
     <select id="getVotingStatsBySgId" parameterType="string" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">
         SELECT
-            id, sg_id as sgId, candidate_id as candidateId,
-            vote_count as voteCount, percentage
+            id, sg_id as sgId,
+            candidate_id as candidateId,
+            policy_id as policyId,
+            vote_count as voteCount,
+            percentage
         FROM
             voting_stats
         WHERE
@@ -85,9 +88,21 @@
     <!-- 모든 후보의 백분율 원자적 업데이트 -->
     <update id="updateAllPercentages">
         UPDATE voting_stats vs
-        SET percentage = (vs.vote_count * 100.0 / (
-            SELECT SUM(vote_count) FROM voting_stats WHERE sg_id = #{sgId}
-        )), updated_at = NOW()
+        SET vs.percentage = CASE
+                                WHEN (SELECT total_count FROM (
+                                                                  SELECT SUM(vote_count) as total_count
+                                                                  FROM voting_stats
+                                                                  WHERE sg_id = #{sgId}
+                                                              ) AS temp) = 0 THEN 0
+                                ELSE (vs.vote_count * 100.0 / (
+                                    SELECT total_count FROM (
+                                                                SELECT SUM(vote_count) as total_count
+                                                                FROM voting_stats
+                                                                WHERE sg_id = #{sgId}
+                                                            ) AS temp2
+                                ))
+            END,
+            vs.updated_at = NOW()
         WHERE vs.sg_id = #{sgId}
     </update>
 
@@ -96,5 +111,96 @@
         SELECT DISTINCT sg_id
         FROM election
         WHERE is_active = true
+    </select>
+
+    <!-- getVotingStatsByPolicyId-->
+    <select id="getVotingStatsByPolicyId" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">
+        SELECT
+            id, sg_id as sgId, policy_id as policyId,
+            vote_count as voteCount, percentage
+        FROM
+            voting_stats
+        WHERE
+            sg_id = #{sgId} AND policy_id = #{policyId}
+    </select>
+
+    <!-- 특정 정당(party_name)의 총 투표수 조회 -->
+    <select id="getVoteCountByPartyName" resultType="int">
+        SELECT
+            COALESCE(SUM(vs.vote_count), 0)
+        FROM
+            voting_stats vs
+                INNER JOIN
+            party_policy pp ON vs.policy_id = pp.id
+        WHERE
+            vs.sg_id = #{sgId} AND pp.party_name = #{partyName}
+    </select>
+
+    <!-- 특정 정당별 백분율 계산 -->
+    <select id="getPartyPercentage" resultType="double">
+        SELECT
+            COALESCE(
+                    (SUM(vs.vote_count) * 100.0 /
+                     (SELECT SUM(vote_count) FROM voting_stats WHERE sg_id = #{sgId})
+                        ), 0.0
+            ) as percentage
+        FROM
+            voting_stats vs
+                INNER JOIN
+            party_policy pp ON vs.policy_id = pp.id
+        WHERE
+            vs.sg_id = #{sgId} AND pp.party_name = #{partyName}
+    </select>
+
+    <!-- 공약별 투표 통계 생성 -->
+    <insert id="insertPolicyVotingStats" parameterType="com.example.mockvoting.domain.voting.entity.VotingStats">
+        INSERT INTO voting_stats (
+            sg_id, policy_id, vote_count, percentage, created_at, updated_at
+        ) VALUES (
+                     #{sgId}, #{policyId}, #{voteCount}, #{percentage}, NOW(), NOW()
+                 )
+    </insert>
+
+    <!-- 공약 투표수 증가 -->
+    <update id="incrementPolicyVoteCount">
+        UPDATE voting_stats
+        SET vote_count = vote_count + 1, updated_at = NOW()
+        WHERE sg_id = #{sgId} AND policy_id = #{policyId}
+    </update>
+
+    <!-- 정당별 투표 통계 조회 -->
+    <select id="getVotingStatsByParty" resultType="map">
+        SELECT
+            pp.party_name,
+            SUM(vs.vote_count) as total_votes,
+            (SUM(vs.vote_count) * 100.0 /
+             (SELECT SUM(vote_count) FROM voting_stats WHERE sg_id = #{sgId})
+                ) as percentage
+        FROM
+            voting_stats vs
+                INNER JOIN
+            party_policy pp ON vs.policy_id = pp.id
+        WHERE
+            vs.sg_id = #{sgId}
+        GROUP BY
+            pp.party_name
+    </select>
+
+    <!-- 정당별 공약별 투표 통계 조회 -->
+    <select id="getDetailedVotingStatsByParty" resultType="map">
+        SELECT
+            pp.party_name,
+            pp.title as policy_title,
+            pp.realm_name,
+            vs.vote_count,
+            vs.percentage
+        FROM
+            voting_stats vs
+                INNER JOIN
+            party_policy pp ON vs.policy_id = pp.id
+        WHERE
+            vs.sg_id = #{sgId}
+        ORDER BY
+            pp.party_name, pp.prms_ord
     </select>
 </mapper>
