@@ -106,12 +106,6 @@
         WHERE vs.sg_id = #{sgId}
     </update>
 
-    <!-- 활성화된 모든 투표 ID 조회 (스케줄링용) -->
-    <select id="findAllActiveVotingIds" resultType="string">
-        SELECT DISTINCT sg_id
-        FROM election
-        WHERE is_active = true
-    </select>
 
     <!-- getVotingStatsByPolicyId-->
     <select id="getVotingStatsByPolicyId" resultType="com.example.mockvoting.domain.voting.entity.VotingStats">

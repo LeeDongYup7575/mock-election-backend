@@ -40,7 +40,7 @@ public interface VotingMapper {
     void updateAllPercentages(@Param("sgId") String sgId);
 
     // 활성화된 모든 투표 ID 조회 (스케줄링용)
-    List<String> findAllActiveVotingIds();
+//    List<String> findAllActiveVotingIds();
 
     // ===== 공약별 투표 관련 메서드 추가 =====
 

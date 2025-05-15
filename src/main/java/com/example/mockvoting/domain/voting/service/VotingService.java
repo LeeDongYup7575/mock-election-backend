@@ -337,26 +337,6 @@ public class VotingService {
         return true;
     }
 
-    /**
-     * 모든 투표 통계 정기적으로 재계산 (동시성 문제 보정)
-     */
-    @Scheduled(fixedRate = 60000) // 1분마다 실행
-    public void scheduleStatisticsRecalculation() {
-        try {
-            // 모든 활성 투표 ID 조회
-            List<String> activeVotingIds = votingMapper.findAllActiveVotingIds();
-            log.info("정기 투표 통계 재계산 시작: 활성 투표 수={}", activeVotingIds.size());
-
-            // 각 투표에 대해 통계 재계산
-            for (String sgId : activeVotingIds) {
-                updateStatistics(sgId);
-            }
-
-            log.info("정기 투표 통계 재계산 완료");
-        } catch (Exception e) {
-            log.error("정기 통계 재계산 중 오류 발생: {}", e.getMessage(), e);
-        }
-    }
 
     // Web3j 관련 유틸리티 메서드
     private Web3j getWeb3j() {

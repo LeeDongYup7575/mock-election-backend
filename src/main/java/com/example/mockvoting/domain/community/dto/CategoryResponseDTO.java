@@ -15,4 +15,6 @@ public class CategoryResponseDTO {
     private String name;
     private String description;
     private Boolean isAnonymous;
+    private int sortOrder;
+    private Boolean isActive;
 }
