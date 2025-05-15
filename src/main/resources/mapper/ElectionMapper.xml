@@ -3,7 +3,7 @@
 <mapper namespace="com.example.mockvoting.domain.candidate.mapper.ElectionMapper">
 
     <select id="findAllElections" resultType="com.example.mockvoting.domain.candidate.entity.Election">
-        select * from election order by sg_id desc
+        select * from election order by
     </select>
 
 </mapper>
