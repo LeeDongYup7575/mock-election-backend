@@ -54,7 +54,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         if (path.startsWith("/api/users/oauth2/")||
                 path.startsWith("/api/community/categories")||
-                (path.startsWith("/api/community/posts") && method.equals("GET"))||
+                (path.startsWith("/api/community/posts") && method.equals("GET") && !path.matches(".*/edit$"))||
                 (path.startsWith("/ws"))
         ) {
             filterChain.doFilter(request, response);
