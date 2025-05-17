@@ -12,18 +12,14 @@ import com.example.mockvoting.util.JwtUtil;
 import org.mybatis.logging.Logger;
 import org.mybatis.logging.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.*;
@@ -56,7 +52,6 @@ public class ChatController {
     // STOMP를 통해 메시지 수신 시 처리
     @MessageMapping("/chat.send/{roomId}")
     public void sendMessage(@DestinationVariable int roomId, ChatMessage chatMessage) {
-
         // 로그 추가
         System.out.println("채팅방 ID: " + roomId + ", 메시지 수신: " + chatMessage.getContent() + ", 보낸이: " + chatMessage.getSender_nickname());
 
@@ -66,6 +61,34 @@ public class ChatController {
         // 메시지에 현재 시간 설정
         if (chatMessage.getSentAt() == null) {
             chatMessage.setSentAt(new Date());
+        }
+
+        // 비속어 감지 및 필터링
+        System.out.println("비속어 감지 메서드 호출 직전...");
+        //테스트용
+        boolean containsProfanity = false;
+        try {
+            containsProfanity = chatService.checkAndFilterProfanity(chatMessage);
+            System.out.println("비속어 감지 결과: " + containsProfanity);
+        } catch (Exception e) {
+            System.err.println("비속어 감지 중 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // 필요한 경우 비속어 감지 결과에 따라 다른 처리 가능
+        if (containsProfanity) {
+            // 예: 사용자에게 경고 메시지 전송
+            ChatMessage warningMessage = new ChatMessage();
+            warningMessage.setSender_nickname("System");
+            warningMessage.setContent("비속어 사용은 채팅 규정에 위반됩니다. 반복 시 제재를 받을 수 있습니다.");
+            warningMessage.setSentAt(new Date());
+            warningMessage.setChatroomId(roomId);
+            warningMessage.setId(null);
+
+            // 경고 메시지 저장 및 전송
+            ChatMessage savedWarning = chatService.saveMessage(warningMessage);
+            messagingTemplate.convertAndSend("/topic/chat/" + roomId, savedWarning);
+
         }
 
         // 메시지 저장
@@ -92,7 +115,7 @@ public class ChatController {
         System.out.println("사용자 채팅방 참여: userId = " + userId + ", nickname = " + nickname + ", roomId = " + roomId);
 
         // 멤버십 생성 또는 업데이트
-         createOrUpdateMembership(userId,roomId);
+        createOrUpdateMembership(userId,roomId);
 
         // 참여 메시지 생성
         Map<String, Object> chatMessage = new HashMap<>();
@@ -166,7 +189,6 @@ public class ChatController {
         message.put("timestamp", new Date());
 
         messagingTemplate.convertAndSend("/topic/participants/" + roomId, message);
-        System.out.println("참여자 목록 전송: roomId = " + roomId + ", 참여자 수 = " + participants.size());
     }
 
     // 채팅방 참여자 목록 조회 API
@@ -181,7 +203,6 @@ public class ChatController {
 
         // 채팅방 멤버십 정보 조회
         List<Membership> memberships = membershipService.findByChatroomId(roomId);
-        System.out.println("조회된 멤버십 수: " + memberships.size());
 
         // 채팅방 멤버십 정보에서 사용자 목록 조회
         return memberships.stream()
@@ -232,6 +253,5 @@ public class ChatController {
     // 멤버십 삭제
     private void removeMembership(String userId, int roomId) {
         membershipRepository.deleteByUserIdAndChatroomId(userId,roomId);
-        System.out.println("멤버십 삭제됨: userId = " + userId + ", chatroomId = " + roomId);
     }
 }
