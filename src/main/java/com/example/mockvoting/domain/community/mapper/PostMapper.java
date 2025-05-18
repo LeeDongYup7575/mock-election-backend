@@ -18,4 +18,10 @@ public interface PostMapper {
                                                        @Param("limit") int limit);
     // 게시글 조회수 업데이트
     void updateViewCountById(@Param("id") Long id);
+
+    // 게시글 id로 카테고리 id 조회
+    Long selectCategoryIdById(@Param("id") Long id);
+
+    // 게시글 id로 게시글 작성자 userId 조회
+    String selectAuthorIdById(@Param("id") Long id);
 }

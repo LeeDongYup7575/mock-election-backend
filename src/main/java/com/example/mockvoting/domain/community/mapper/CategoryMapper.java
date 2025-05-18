@@ -20,6 +20,9 @@ public interface CategoryMapper {
     // code로 익명 게시판 여부 조회
     boolean selectIsAnonymousByCode(@Param("code") String code);
 
+    // id로 익명 게시판 여부 조회
+    boolean selectIsAnonymousById(@Param("id") Long id);
+
     void updateCategoryStatus(@Param("id") Long id, @Param("isActive") Boolean isActive);
 
     void insertCategory(CategoryResponseDTO categoryDTO);

@@ -57,4 +57,19 @@
         SET views = views + 1
         WHERE id = #{id}
     </update>
+
+    <!-- 게시글 id로 카테고리 id 조회 -->
+    <select id="selectCategoryIdById" resultType="Long">
+        SELECT category_id
+        FROM post
+        WHERE id = #{id}
+    </select>
+
+    <!-- 게시글 id로 게시글 작성자 userId 조회 -->
+    <select id="selectAuthorIdById" resultType="String">
+        SELECT author_id
+        FROM post
+        WHERE id = #{id}
+    </select>
+
 </mapper>

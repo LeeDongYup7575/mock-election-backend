@@ -25,4 +25,5 @@ public class PostCommentResponseDTO {
 
     private String authorNickname;
     private Byte userVote; // 1: upvote, -1: downvote, null: 투표 안함
+    private String anonymousNickname;
 }

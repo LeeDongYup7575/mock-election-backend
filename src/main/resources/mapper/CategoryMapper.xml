@@ -45,6 +45,11 @@
         SELECT is_anonymous FROM category WHERE code = #{code}
     </select>
 
+    <!-- id로 익명 게시판 여부 조회 -->
+    <select id="selectIsAnonymousById" resultType="boolean">
+        SELECT is_anonymous FROM category WHERE id = #{id}
+    </select>
+
     <!-- 상태 업데이트 -->
     <update id="updateCategoryStatus">
         UPDATE category
