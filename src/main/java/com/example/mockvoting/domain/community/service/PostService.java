@@ -124,21 +124,40 @@ public class PostService {
 
     /**
      *  카테고리별 게시글 조회
+     *  categoryCode == all -> 전체 조회
+     *  else -> 카테고리별 조회
      */
     @Transactional(readOnly = true)
     public Page<PostSummaryResponseDTO> getPostsByCategory(String categoryCode, Pageable pageable) {
         int offset = (int) pageable.getOffset();
         int limit = (int) pageable.getPageSize();
 
-        List<PostSummaryResponseDTO> posts = postMapper.selectPostsByCategory(categoryCode, offset, limit);
-        boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(categoryCode);
-        if(isAnonymous) {
+        List<PostSummaryResponseDTO> posts;
+        int total;
+        if("all".equals(categoryCode)) {    // 활성화된 카테고리에 속한 게시글 전체 조회
+            posts = postMapper.selectPostsFromActiveCategories(offset, limit);
+            total = categoryMapper.selectPostCountFromActiveCategories();
+
+            // 각 게시글의 카테고리에 따라 익명 처리
             for (PostSummaryResponseDTO post : posts) {
-                post.setAuthorNickname("익명");
+                boolean isAnonymous = categoryMapper.selectIsAnonymousById(post.getCategoryId());
+                if (isAnonymous) {
+                    post.setAuthorNickname("익명");
+                }
+            }
+
+        }else{  // 카테고리별 게시글 조회
+            posts = postMapper.selectPostsByCategory(categoryCode, offset, limit);
+            total = categoryMapper.selectPostCountByCategory(categoryCode);
+
+            // 익명 처리
+            boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(categoryCode);
+            if(isAnonymous) {
+                for (PostSummaryResponseDTO post : posts) {
+                    post.setAuthorNickname("익명");
+                }
             }
         }
-
-        int total = categoryMapper.selectPostCountByCategory(categoryCode);
 
         return new PageImpl<>(posts, pageable, total);
     }

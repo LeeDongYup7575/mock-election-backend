@@ -30,13 +30,39 @@
         WHERE post.id = #{id}
     </select>
 
+    <!-- 활성화된 카테고리에 속한 게시글 전체 조회 -->
+    <select id="selectPostsFromActiveCategories" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = FALSE
+            ) AS commentCount
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE category.is_active = TRUE
+          AND post.is_deleted = FALSE
+        ORDER BY post.created_at DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <!-- 카테고리별 게시글 조회 -->
     <select id="selectPostsByCategory" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
         SELECT
             post.id,
             post.category_id,
             post.title,
-            post.author_id,
             post.thumbnail_url,
             (post.upvotes - post.downvotes) AS voteCount,
             post.views,

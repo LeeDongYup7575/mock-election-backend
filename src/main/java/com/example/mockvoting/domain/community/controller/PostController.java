@@ -82,6 +82,8 @@ public class PostController {
 
     /**
      *  카테고리별 게시글 조회
+     *  categoryCode == all -> 전체 조회
+     *  else -> 카테고리별 조회
      */
     @GetMapping("/category/{categoryCode}")
     public ResponseEntity<ApiResponse<Page<PostSummaryResponseDTO>>> getPostsByCategory(@PathVariable String categoryCode, Pageable pageable) {

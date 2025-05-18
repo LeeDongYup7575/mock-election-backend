@@ -14,6 +14,9 @@ public interface CategoryMapper {
     // 활성화 게시판 조회
     List<CategoryResponseDTO> selectCategoriesByIsActive();
 
+    // 활성화된 게시판에 속하는 게시글 전체 개수 조회
+    Integer selectPostCountFromActiveCategories();
+
     // 카테고리별 게시글 개수 조회
     int selectPostCountByCategory(@Param("categoryCode") String categoryCode);
 
