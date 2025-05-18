@@ -86,11 +86,15 @@ public class PostController {
      *  else -> 카테고리별 조회
      */
     @GetMapping("/category/{categoryCode}")
-    public ResponseEntity<ApiResponse<Page<PostSummaryResponseDTO>>> getPostsByCategory(@PathVariable String categoryCode, Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<PostSummaryResponseDTO>>> getPostsByCategory(
+            @PathVariable String categoryCode,
+            Pageable pageable,
+            @RequestParam(required = false) String searchType,
+            @RequestParam(required = false) String keyword) {
         log.info("카테고리 [{}]에 해당하는 게시글 목록 조회 요청", categoryCode);
 
         try {
-            Page<PostSummaryResponseDTO> posts = postService.getPostsByCategory(categoryCode, pageable);
+            Page<PostSummaryResponseDTO> posts = postService.getPostsByCategory(categoryCode, pageable, searchType, keyword);
             log.info("카테고리 [{}] 게시글 목록 조회 요청 처리 성공", categoryCode);
             return ResponseEntity.ok(ApiResponse.success("게시글 목록 조회 성공", posts));
         } catch (Exception e) {

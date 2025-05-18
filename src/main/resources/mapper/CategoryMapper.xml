@@ -38,7 +38,53 @@
                  JOIN category ON post.category_id = category.id
         WHERE category.is_active = TRUE
           AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
     </select>
+
+    <select id="selectPostCountByCategoryWithSearch" resultType="Integer">
+        SELECT COUNT(*)
+        FROM post
+        JOIN category ON post.category_id = category.id
+        JOIN user ON post.author_id = user.user_id
+        WHERE category.code = #{categoryCode}
+        AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+
 
     <!-- 카테고리별 게시글 개수 조회 -->
     <select id="selectPostCountByCategory" resultType="int">

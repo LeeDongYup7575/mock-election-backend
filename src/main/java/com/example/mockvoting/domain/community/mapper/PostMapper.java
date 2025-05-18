@@ -15,12 +15,17 @@ public interface PostMapper {
     PostDetailResponseDTO selectPostDetailById(@Param("id") Long id);
 
     // 활성화된 카테고리에 속한 게시글 전체 조회
-    List<PostSummaryResponseDTO> selectPostsFromActiveCategories(@Param("offset") int offset, @Param("limit") int limit);
+    List<PostSummaryResponseDTO> selectPostsFromActiveCategories(@Param("offset") int offset,
+                                                                 @Param("limit") int limit,
+                                                                 @Param("searchType") String searchType,
+                                                                 @Param("keyword") String keyword);
 
     // 카테고리별 게시글 조회
     List<PostSummaryResponseDTO> selectPostsByCategory(@Param("categoryCode") String categoryCode,
                                                        @Param("offset") int offset,
-                                                       @Param("limit") int limit);
+                                                       @Param("limit") int limit,
+                                                       @Param("searchType") String searchType,
+                                                       @Param("keyword") String keyword);
     // 인기 게시글 조회
     List<PopularPostResponseDTO> selectPopularPosts();
 

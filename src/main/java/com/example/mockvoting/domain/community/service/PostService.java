@@ -123,20 +123,20 @@ public class PostService {
     }
 
     /**
-     *  카테고리별 게시글 조회
+     *  카테고리별 게시글 조회 + 검색 필터
      *  categoryCode == all -> 전체 조회
      *  else -> 카테고리별 조회
      */
     @Transactional(readOnly = true)
-    public Page<PostSummaryResponseDTO> getPostsByCategory(String categoryCode, Pageable pageable) {
+    public Page<PostSummaryResponseDTO> getPostsByCategory(String categoryCode, Pageable pageable, String searchType, String keyword) {
         int offset = (int) pageable.getOffset();
         int limit = (int) pageable.getPageSize();
 
         List<PostSummaryResponseDTO> posts;
         int total;
         if("all".equals(categoryCode)) {    // 활성화된 카테고리에 속한 게시글 전체 조회
-            posts = postMapper.selectPostsFromActiveCategories(offset, limit);
-            total = categoryMapper.selectPostCountFromActiveCategories();
+            posts = postMapper.selectPostsFromActiveCategories(offset, limit, searchType, keyword);
+            total = categoryMapper.selectPostCountFromActiveCategories(searchType, keyword);
 
             // 각 게시글의 카테고리에 따라 익명 처리
             for (PostSummaryResponseDTO post : posts) {
@@ -147,8 +147,8 @@ public class PostService {
             }
 
         }else{  // 카테고리별 게시글 조회
-            posts = postMapper.selectPostsByCategory(categoryCode, offset, limit);
-            total = categoryMapper.selectPostCountByCategory(categoryCode);
+            posts = postMapper.selectPostsByCategory(categoryCode, offset, limit, searchType, keyword);
+            total = categoryMapper.selectPostCountByCategoryWithSearch(categoryCode, searchType, keyword);
 
             // 익명 처리
             boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(categoryCode);
