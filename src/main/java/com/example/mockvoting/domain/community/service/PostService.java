@@ -13,6 +13,7 @@ import com.example.mockvoting.domain.community.repository.PostAttachmentReposito
 import com.example.mockvoting.domain.community.repository.PostRepository;
 import com.example.mockvoting.domain.gcs.service.GcsService;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -139,6 +141,28 @@ public class PostService {
         int total = categoryMapper.selectPostCountByCategory(categoryCode);
 
         return new PageImpl<>(posts, pageable, total);
+    }
+
+    /**
+     * 인기 게시글 조회
+     */
+    public List<PopularPostResponseDTO> getPopularPosts() {
+        List<PopularPostResponseDTO> popularPosts = postMapper.selectPopularPosts();
+
+        for (PopularPostResponseDTO post : popularPosts) {
+            // 1. summaryContent 가공
+            String text = Jsoup.parse(post.getSummaryContent()).text();
+            String summary = text.length() <= 100 ? text : text.substring(0, 100) + "...";
+            post.setSummaryContent(summary);
+
+            // 2. 익명 여부 판단
+            boolean isAnonymous = categoryMapper.selectIsAnonymousById(post.getCategoryId());
+            if (isAnonymous) {
+                post.setAuthorNickname("익명");
+            }
+        }
+
+        return popularPosts;
     }
 
     /**

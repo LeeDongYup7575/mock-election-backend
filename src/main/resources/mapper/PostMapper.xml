@@ -58,6 +58,37 @@
             LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!-- 인기 게시글 조회 -->
+    <select id="selectPopularPosts" resultType="com.example.mockvoting.domain.community.dto.PopularPostResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = 0
+            ) AS commentCount,
+            SUBSTRING(post.content, 1, 300) AS summaryContent
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE post.is_deleted = 0
+          AND post.created_at >= NOW() - INTERVAL 7 DAY
+        ORDER BY
+            (post.upvotes - post.downvotes) * 2 + post.views * 0.1 DESC,
+            post.created_at DESC
+            LIMIT 3
+    </select>
+
+
     <!-- 게시글 조회수 업데이트 -->
     <update id="updateViewCountById">
         UPDATE post

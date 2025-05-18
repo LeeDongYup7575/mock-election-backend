@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.community.mapper;
 
+import com.example.mockvoting.domain.community.dto.PopularPostResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
 import org.apache.ibatis.annotations.Mapper;
@@ -16,6 +17,9 @@ public interface PostMapper {
     List<PostSummaryResponseDTO> selectPostsByCategory(@Param("categoryCode") String categoryCode,
                                                        @Param("offset") int offset,
                                                        @Param("limit") int limit);
+    // 인기 게시글 조회
+    List<PopularPostResponseDTO> selectPopularPosts();
+
     // 게시글 조회수 업데이트
     void updateViewCountById(@Param("id") Long id);
 
