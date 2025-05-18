@@ -69,64 +69,6 @@ public class VotingService {
         return votingMapper.getDistinctPartyNamesBySgId(sgId);
     }
 
-//    @Transactional
-//    public VotingStatsDTO submitVoting(String sgId, Integer candidateId, String userId) {
-//        try {
-//            // 1. 사용자 조회
-//            User user = userMapper.findByUserId(userId)
-//                    .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
-//
-//            // 2. 이미 투표했는지 확인
-//            if (user.isElection()) {
-//                log.warn("이미 투표한 사용자: userId={}", userId);
-//                throw new CustomException("이미 투표에 참여하셨습니다.");
-//            }
-//
-//            // 3. 사용자 지갑 확인
-//            Wallet wallet = walletMapper.findByUserId(userId)
-//                    .orElseThrow(() -> new CustomException("투표하려면 지갑 연결이 필요합니다."));
-//
-//            // 4. 토큰 차감
-//            if (wallet.getTokenBalance() < 1) {
-//                throw new CustomException("투표에 필요한 토큰이 부족합니다.");
-//            }
-//
-//            int newBalance = wallet.getTokenBalance() - 1;
-//            walletMapper.updateTokenBalance(userId, newBalance);
-//            log.info("토큰 차감 완료: userId={}, 남은 토큰={}", userId, newBalance);
-//
-//            // 5. 후보자별 투표 통계 처리 (기존 방식 유지)
-//            VotingStats stats = votingMapper.getVotingStatsByCandidateId(sgId, candidateId);
-//
-//            if (stats == null) {
-//                log.info("새 투표 통계 생성: sgId={}, candidateId={}", sgId, candidateId);
-//                VotingStats newStats = VotingStats.builder()
-//                        .sgId(sgId)
-//                        .candidateId(candidateId)
-//                        .voteCount(1)
-//                        .percentage(0.0)
-//                        .build();
-//                votingMapper.insertVotingStats(newStats);
-//            } else {
-//                log.info("투표 수 증가: sgId={}, candidateId={}, 현재 count={}", sgId, candidateId, stats.getVoteCount());
-//                votingMapper.incrementVoteCount(sgId, candidateId);
-//            }
-//
-//            // 6. 사용자의 투표 상태 업데이트
-//            userMapper.updateUserElectionStatus(userId, true);
-//
-//            // 7. 백분율 업데이트
-//            votingMapper.updateAllPercentages(sgId);
-//
-//            // 8. 투표 결과 반환
-//            return getVotingStats(sgId);
-//
-//        } catch (Exception e) {
-//            log.error("투표 처리 중 오류 발생: userId={}, sgId={}, candidateId={}", userId, sgId, candidateId, e);
-//            throw e;
-//        }
-//    }
-
     @Transactional
     public VotingStatsDTO submitVoting(String sgId, Integer candidateId, String userId) {
         try {
@@ -190,87 +132,6 @@ public class VotingService {
         }
     }
 
-    /**
-     * 메타마스크 투표 검증 및 제출 (candidateId로 처리)
-     */
-//    @Transactional
-//    public VotingStatsDTO verifyAndSubmitMetaMaskVoting(String sgId, Integer candidateId, String userId, String transactionHash) {
-//        // 1. 사용자 조회
-//        User user = userMapper.findByUserId(userId)
-//                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
-//
-//        // 2. 이미 투표했는지 확인
-//        if (user.isElection()) {
-//            throw new CustomException("이미 투표에 참여하셨습니다.");
-//        }
-//
-//        // 3. 지갑 타입 확인
-//        Wallet wallet = walletMapper.findByUserId(userId)
-//                .orElseThrow(() -> new CustomException("투표하려면 지갑 연결이 필요합니다."));
-//
-//        if (!"METAMASK".equals(wallet.getWalletType())) {
-//            throw new CustomException("메타마스크 지갑 투표만 이 API를 사용할 수 있습니다.");
-//        }
-//
-//        // 4. 블록체인 트랜잭션 검증 또는 DB 토큰 차감
-//        if (transactionHash != null && !transactionHash.isEmpty() && !transactionHash.equals("INTERNAL")) {
-//            // 실제 블록체인 트랜잭션이 있는 경우 검증
-//            boolean isValidTransaction = walletService.verifyTransaction(
-//                    transactionHash, wallet.getWalletAddress(), candidateId);
-//
-//            if (!isValidTransaction) {
-//                throw new CustomException("유효하지 않은 투표 트랜잭션입니다.");
-//            }
-//        } else {
-//            // DB 토큰 차감
-//            if (wallet.getTokenBalance() < 1) {
-//                throw new CustomException("투표에 필요한 토큰이 부족합니다.");
-//            }
-//
-//            int newBalance = wallet.getTokenBalance() - 1;
-//            walletMapper.updateTokenBalance(userId, newBalance);
-//            log.info("DB 토큰 차감 완료: userId={}, 남은 토큰={}", userId, newBalance);
-//        }
-//
-//        // 5. 후보자별 투표 통계 처리 (일반 투표와 동일)
-//        VotingStats stats = votingMapper.getVotingStatsByCandidateId(sgId, candidateId);
-//
-//        if (stats == null) {
-//            log.info("새 투표 통계 생성: sgId={}, candidateId={}", sgId, candidateId);
-//            VotingStats newStats = VotingStats.builder()
-//                    .sgId(sgId)
-//                    .candidateId(candidateId)
-//                    .voteCount(1)
-//                    .percentage(0.0)
-//                    .build();
-//            votingMapper.insertVotingStats(newStats);
-//        } else {
-//            log.info("투표 수 증가: sgId={}, candidateId={}, 현재 count={}", sgId, candidateId, stats.getVoteCount());
-//            votingMapper.incrementVoteCount(sgId, candidateId);
-//        }
-//
-//        // 6. 사용자의 투표 상태 업데이트
-//        userMapper.updateUserElectionStatus(userId, true);
-//
-//        // 7. 토큰 잔액 새로고침 시도
-//        if (transactionHash != null && !transactionHash.isEmpty() && !transactionHash.equals("INTERNAL")) {
-//            try {
-//                BigInteger currentBalance = walletService.getTokenBalanceFromBlockchain(wallet.getWalletAddress());
-//                int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
-//                walletMapper.updateTokenBalance(userId, tokenBalance);
-//                log.info("투표 후 토큰 잔액 업데이트: userId={}, tokenBalance={}", userId, tokenBalance);
-//            } catch (Exception e) {
-//                log.warn("투표 후 토큰 잔액 조회 실패: {}", e.getMessage());
-//            }
-//        }
-//
-//        // 8. 백분율 업데이트
-//        votingMapper.updateAllPercentages(sgId);
-//
-//        // 9. 투표 결과 반환
-//        return getVotingStats(sgId);
-//    }
-
     @Transactional
     public VotingStatsDTO verifyAndSubmitMetaMaskVoting(String sgId, Integer candidateId, String userId, String transactionHash) {
         // 1. 사용자 조회
@@ -300,9 +161,14 @@ public class VotingService {
                 throw new CustomException("유효하지 않은 투표 트랜잭션입니다.");
             }
         } else {
-            // DB 토큰 차감 - WalletService를 통해 차감하도록 수정
-            walletService.deductToken(userId, 1);
-            log.info("DB 토큰 차감 완료: userId={}", userId);
+            // DB 토큰 차감 - 직접 처리
+            if (wallet.getTokenBalance() < 1) {
+                throw new CustomException("투표에 필요한 토큰이 부족합니다.");
+            }
+
+            int newBalance = wallet.getTokenBalance() - 1;
+            walletMapper.updateTokenBalance(userId, newBalance);
+            log.info("DB 토큰 차감 완료: userId={}, 남은 토큰={}", userId, newBalance);
         }
 
         // 5. 후보자별 투표 통계 처리 (일반 투표와 동일)
