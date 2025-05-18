@@ -15,7 +15,7 @@ public class PostSummaryResponseDTO {
     private Long id;
     private Long categoryId;
     private String title;
-    private String authorId;
+
     private String thumbnailUrl;
     private Integer voteCount;
     private Integer views;
@@ -23,4 +23,5 @@ public class PostSummaryResponseDTO {
 
     private String categoryName;
     private String authorNickname;
+    private Integer commentCount;
 }
