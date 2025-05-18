@@ -17,6 +17,9 @@ public interface CategoryMapper {
     // 카테고리별 게시글 개수 조회
     int selectPostCountByCategory(@Param("categoryCode") String categoryCode);
 
+    // 익명 게시판 여부 조회
+    boolean selectIsAnonymousByCode(@Param("code") String code);
+
     void updateCategoryStatus(@Param("id") Long id, @Param("isActive") Boolean isActive);
 
     void insertCategory(CategoryResponseDTO categoryDTO);

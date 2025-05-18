@@ -105,6 +105,13 @@ public class PostService {
         int limit = (int) pageable.getPageSize();
 
         List<PostSummaryResponseDTO> posts = postMapper.selectPostsByCategory(categoryCode, offset, limit);
+        boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(categoryCode);
+        if(isAnonymous) {
+            for (PostSummaryResponseDTO post : posts) {
+                post.setAuthorNickname("익명");
+            }
+        }
+
         int total = categoryMapper.selectPostCountByCategory(categoryCode);
 
         return new PageImpl<>(posts, pageable, total);
