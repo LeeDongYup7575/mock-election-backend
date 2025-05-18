@@ -80,7 +80,8 @@
         FROM post
                  JOIN category ON post.category_id = category.id
                  JOIN user ON post.author_id = user.user_id
-        WHERE post.is_deleted = 0
+        WHERE category.code != 'notice'
+          AND post.is_deleted = FALSE
           AND post.created_at >= NOW() - INTERVAL 7 DAY
         ORDER BY
             (post.upvotes - post.downvotes) * 2 + post.views * 0.1 DESC,
@@ -88,6 +89,20 @@
             LIMIT 3
     </select>
 
+    <!-- 최근 공지사항 조회 -->
+    <select id="selectRecentNotices" resultType="com.example.mockvoting.domain.community.dto.NoticeSummaryDTO">
+        SELECT
+            post.id,
+            post.title,
+            SUBSTRING(post.content, 1, 300) AS summaryContent,
+            post.created_at AS createdAt
+        FROM post
+                 JOIN category ON post.category_id = category.id
+        WHERE category.code = 'notice'
+          AND post.is_deleted = FALSE
+        ORDER BY post.created_at DESC
+            LIMIT 6
+    </select>
 
     <!-- 게시글 조회수 업데이트 -->
     <update id="updateViewCountById">

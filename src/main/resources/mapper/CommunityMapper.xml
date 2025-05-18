@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.community.mapper.CommunityMapper">
+    <select id="selectCommunityStats" resultType="com.example.mockvoting.domain.community.dto.CommunityStatsDTO">
+        SELECT
+            (SELECT COUNT(*) FROM user WHERE active = TRUE) AS userCount,
+            (SELECT COUNT(*)
+             FROM post
+                      JOIN category ON post.category_id = category.id
+             WHERE post.is_deleted = FALSE
+               AND category.code != 'notice') AS postCount,
+            (SELECT COUNT(*) FROM post_comment WHERE is_deleted = FALSE) AS commentCount
+    </select>
+</mapper>

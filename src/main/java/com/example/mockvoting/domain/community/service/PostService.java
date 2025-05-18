@@ -144,28 +144,6 @@ public class PostService {
     }
 
     /**
-     * 인기 게시글 조회
-     */
-    public List<PopularPostResponseDTO> getPopularPosts() {
-        List<PopularPostResponseDTO> popularPosts = postMapper.selectPopularPosts();
-
-        for (PopularPostResponseDTO post : popularPosts) {
-            // 1. summaryContent 가공
-            String text = Jsoup.parse(post.getSummaryContent()).text();
-            String summary = text.length() <= 100 ? text : text.substring(0, 100) + "...";
-            post.setSummaryContent(summary);
-
-            // 2. 익명 여부 판단
-            boolean isAnonymous = categoryMapper.selectIsAnonymousById(post.getCategoryId());
-            if (isAnonymous) {
-                post.setAuthorNickname("익명");
-            }
-        }
-
-        return popularPosts;
-    }
-
-    /**
      *  게시글 등록
      */
 //    @Transactional

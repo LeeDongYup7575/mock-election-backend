@@ -99,24 +99,6 @@ public class PostController {
     }
 
     /**
-     * 인기 게시글 조회
-     */
-    @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<List<PopularPostResponseDTO>>> getPopularPosts() {
-
-        log.info("인기 게시글 조회 요청");
-
-        try {
-            List<PopularPostResponseDTO> popularPosts = postService.getPopularPosts();
-            log.info("인기 게시글 조회 요청 처리 성공");
-            return ResponseEntity.ok(ApiResponse.success("인기 게시글 조회 성공", popularPosts));
-        } catch (Exception e) {
-            log.error("인기 게시글 조회 요청 처리 실패", e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("인기 게시글 조회 실패"));
-        }
-    }
-
-    /**
      *  게시글 등록
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.community.mapper;
 
+import com.example.mockvoting.domain.community.dto.NoticeSummaryDTO;
 import com.example.mockvoting.domain.community.dto.PopularPostResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostDetailResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO;
@@ -19,6 +20,9 @@ public interface PostMapper {
                                                        @Param("limit") int limit);
     // 인기 게시글 조회
     List<PopularPostResponseDTO> selectPopularPosts();
+
+    // 최근 공지사항 조회
+    List<NoticeSummaryDTO> selectRecentNotices();
 
     // 게시글 조회수 업데이트
     void updateViewCountById(@Param("id") Long id);
