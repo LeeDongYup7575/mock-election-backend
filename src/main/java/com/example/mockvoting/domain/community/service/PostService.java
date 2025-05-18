@@ -60,6 +60,12 @@ public class PostService {
 
         // 4) 게시글 조회
         PostDetailResponseDTO detail = postMapper.selectPostDetailById(id);
+        // 4-1) 익명 게시글이면 닉네임 가공
+        boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(detail.getCategoryCode());
+        if(isAnonymous) {
+            detail.setAuthorNickname("익명");
+        }
+
         // 5) 첨부파일 조회
         List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(id);
         detail.setAttachments(attachments);
