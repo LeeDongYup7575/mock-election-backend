@@ -17,6 +17,7 @@
             category.code AS category_code,
             category.name AS category_name,
             user.nickname AS author_nickname,
+            category.is_anonymous AS anonymous,
             (
                 SELECT COUNT(*)
                 FROM post_comment
