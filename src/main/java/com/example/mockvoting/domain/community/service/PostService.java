@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -36,26 +38,38 @@ public class PostService {
     private final PostAttachmentRepository postAttachmentRepository;
     private final PostDtoMapper postDtoMapper;
     private final GcsService gcsService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /**
      *  게시글 상세 조회
      */
     @Transactional
-    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds, String userId) {
-        // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
-        List<String> viewedList = viewedPostIds.isEmpty()
-                ? Collections.emptyList()
-                : Arrays.asList(viewedPostIds.split("-"));
-        boolean alreadyViewed = viewedList.contains(id.toString());
+    public PostDetailViewDTO getPostDetail(Long id, String userId) {
+//        // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
+//        List<String> viewedList = viewedPostIds.isEmpty()
+//                ? Collections.emptyList()
+//                : Arrays.asList(viewedPostIds.split("-"));
+//        boolean alreadyViewed = viewedList.contains(id.toString());
+//
+//        String updatedViewedPostIds = null;
+//        if (!alreadyViewed) {
+//            // 2) 조회수 증가
+//            postMapper.updateViewCountById(id);
+//            // 3) 쿠키에 담을 새 값 계산
+//            updatedViewedPostIds = viewedPostIds.isEmpty()
+//                    ? id.toString()
+//                    : viewedPostIds + "-" + id;
+//        }
 
-        String updatedViewedPostIds = null;
-        if (!alreadyViewed) {
-            // 2) 조회수 증가
-            postMapper.updateViewCountById(id);
-            // 3) 쿠키에 담을 새 값 계산
-            updatedViewedPostIds = viewedPostIds.isEmpty()
-                    ? id.toString()
-                    : viewedPostIds + "-" + id;
+        boolean alreadyViewed = false;
+        if (userId != null) {
+            String key = "viewed:" + userId;
+            alreadyViewed = Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, id.toString()));
+            if (!alreadyViewed) {
+                postMapper.updateViewCountById(id);
+                stringRedisTemplate.opsForSet().add(key, id.toString());
+                stringRedisTemplate.expire(key, Duration.ofHours(12));
+            }
         }
 
         // 4) 게시글 조회
@@ -80,9 +94,13 @@ public class PostService {
             detail.setUserVote(vote);   // detail DTO에 사용자 투표 여부 정의 (1/-1/null)
         }
 
+//        return PostDetailViewDTO.builder()
+//                .post(detail)
+//                .newViewedPostIds(updatedViewedPostIds)
+//                .build();
         return PostDetailViewDTO.builder()
                 .post(detail)
-                .newViewedPostIds(updatedViewedPostIds)
+                .newViewedPostIds(null)
                 .build();
     }
 

@@ -31,22 +31,24 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDetailResponseDTO>> getPostDetail(
             @PathVariable Long id,
-            @RequestParam(value = "userId", required = false) String userId,
-            @CookieValue(value = "viewedPostIds", defaultValue = "") String viewedPostIds,
-            HttpServletResponse response) {
+            @RequestParam(value = "userId", required = false) String userId
+//            @CookieValue(value = "viewedPostIds", defaultValue = "") String viewedPostIds,
+//            HttpServletResponse response
+    ) {
 
         log.info("게시글 [{}] 상세 조회 요청", id);
 
         try {
-            PostDetailViewDTO result = postService.getPostDetail(id, viewedPostIds, userId);
+//            PostDetailViewDTO result = postService.getPostDetail(id, viewedPostIds, userId);
+            PostDetailViewDTO result = postService.getPostDetail(id, userId);
 
             // 새 쿠키값이 있을 때만 HTTP 응답에 추가
-            if (result.getNewViewedPostIds() != null) {
-                Cookie cookie = new Cookie("viewedPostIds", result.getNewViewedPostIds());
-                cookie.setPath("/");
-                cookie.setMaxAge(60 * 60 * 12); // 12시간 유지
-                response.addCookie(cookie);
-            }
+//            if (result.getNewViewedPostIds() != null) {
+//                Cookie cookie = new Cookie("viewedPostIds", result.getNewViewedPostIds());
+//                cookie.setPath("/");
+//                cookie.setMaxAge(60 * 60 * 12); // 12시간 유지
+//                response.addCookie(cookie);
+//            }
 
             log.info("게시글 [{}] 상세 조회 요청 처리 성공", id);
             return ResponseEntity.ok(ApiResponse.success("게시글 상세 조회 성공", result.getPost()));
