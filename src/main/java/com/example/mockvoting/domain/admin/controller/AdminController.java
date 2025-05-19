@@ -1,6 +1,8 @@
 package com.example.mockvoting.domain.admin.controller;
 
 import com.example.mockvoting.domain.admin.dto.AdminDTO;
+import com.example.mockvoting.domain.admin.dto.PostCountDTO;
+import com.example.mockvoting.domain.admin.dto.UserStatsDTO;
 import com.example.mockvoting.domain.admin.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,5 +39,15 @@ public class AdminController {
         adminService.updateUserRoleStatus(userId, targetRole);
         return ResponseEntity.ok().build();
     }
+
+
+
+    // 추가: 사용자 통계 데이터 조회
+    @GetMapping("/stats")
+    public ResponseEntity<UserStatsDTO> getUserStats() {
+        return ResponseEntity.ok(adminService.getUserStats());
+    }
+
+
 
 }

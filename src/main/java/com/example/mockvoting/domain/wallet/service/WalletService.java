@@ -113,7 +113,7 @@ public class WalletService {
                     .walletAddress(walletAddress)
                     .privateKey("")
                     .walletType("METAMASK")
-                    .tokenBalance(0)
+                    .tokenBalance(0) // 초기 토큰 0으로 설정
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
@@ -121,57 +121,70 @@ public class WalletService {
             log.info("새 지갑 등록 완료");
         }
 
-        // 토큰 처리
+        // 토큰 처리 - has_received_token이 false인 경우에만 발급
         try {
-            // 1. 블록체인에서 현재 잔액 확인
-            BigInteger currentBalance = getTokenBalanceFromBlockchain(walletAddress);
-            int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
-            log.info("블록체인 토큰 잔액: {} (wei: {})", tokenBalance, currentBalance);
+            // 사용자가 이미 토큰을 받았는지 확인
+            if (!user.isHasReceivedToken()) {
+                log.info("사용자가 토큰을 받은 적이 없습니다. 토큰 발급을 시도합니다.");
 
-            // 2. 토큰이 없으면 발급 시도
-            if (tokenBalance == 0) {
-                log.info("토큰이 없으므로 발급을 시도합니다.");
+                // 1. 블록체인에서 현재 잔액 확인
+                BigInteger currentBalance = getTokenBalanceFromBlockchain(walletAddress);
+                int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
+                log.info("블록체인 토큰 잔액: {} (wei: {})", tokenBalance, currentBalance);
 
-                try {
-                    // Admin 잔액 확인
-                    checkAdminBalance();
+                // 2. 토큰이 없으면 발급 시도
+                if (tokenBalance == 0) {
+                    log.info("토큰이 없으므로 발급을 시도합니다.");
 
-                    // 블록체인에 토큰 발급
-                    boolean tokenIssued = issueTokenOnBlockchain(walletAddress);
+                    try {
+                        // Admin 잔액 확인
+                        checkAdminBalance();
 
-                    if (tokenIssued) {
-                        tokenBalance = INITIAL_TOKEN_AMOUNT;
-                        log.info("블록체인 토큰 발급 성공!");
-                    } else {
-                        log.warn("블록체인 토큰 발급 실패, DB에서만 관리");
+                        // 블록체인에 토큰 발급
+                        boolean tokenIssued = issueTokenOnBlockchain(walletAddress);
+
+                        if (tokenIssued) {
+                            tokenBalance = INITIAL_TOKEN_AMOUNT;
+                            log.info("블록체인 토큰 발급 성공!");
+                        } else {
+                            log.warn("블록체인 토큰 발급 실패, DB에서만 관리");
+                            tokenBalance = INITIAL_TOKEN_AMOUNT;
+                        }
+                    } catch (Exception e) {
+                        log.error("블록체인 토큰 발급 중 오류, DB에서만 관리: {}", e.getMessage());
                         tokenBalance = INITIAL_TOKEN_AMOUNT;
                     }
-                } catch (Exception e) {
-                    log.error("블록체인 토큰 발급 중 오류, DB에서만 관리: {}", e.getMessage());
-                    tokenBalance = INITIAL_TOKEN_AMOUNT;
-                }
 
-                // 사용자 토큰 발급 상태 업데이트
-                if (!user.isHasReceivedToken()) {
+                    // 사용자 토큰 발급 상태 업데이트
                     userMapper.updateUserTokenStatus(userId, true);
                     log.info("사용자 토큰 발급 상태 업데이트 완료");
                 }
-            }
 
-            // 3. DB 토큰 잔액 업데이트
-            wallet.setTokenBalance(tokenBalance);
-            walletMapper.updateTokenBalance(userId, tokenBalance);
-            log.info("최종 토큰 잔액: {}", tokenBalance);
+                // 3. DB 토큰 잔액 업데이트
+                wallet.setTokenBalance(tokenBalance);
+                walletMapper.updateTokenBalance(userId, tokenBalance);
+                log.info("최종 토큰 잔액: {}", tokenBalance);
+            } else {
+                log.info("사용자가 이미 토큰을 받았습니다. 현재 잔액을 유지합니다.");
+                // 기존 잔액 유지 - 블록체인에서 잔액 확인하여 동기화
+                try {
+                    BigInteger currentBalance = getTokenBalanceFromBlockchain(walletAddress);
+                    int tokenBalance = currentBalance.divide(BigInteger.TEN.pow(18)).intValue();
+
+                    // 블록체인 잔액과 DB 잔액이 다르면 업데이트
+                    if (tokenBalance != wallet.getTokenBalance()) {
+                        walletMapper.updateTokenBalance(userId, tokenBalance);
+                        wallet.setTokenBalance(tokenBalance);
+                        log.info("블록체인 잔액과 동기화: {}", tokenBalance);
+                    }
+                } catch (Exception e) {
+                    log.warn("블록체인 잔액 확인 실패, DB 잔액 유지: {}", e.getMessage());
+                }
+            }
 
         } catch (Exception e) {
             log.error("토큰 처리 중 최종 오류: {}", e.getMessage(), e);
-            // 오류 발생 시에도 기본 토큰 제공
-            wallet.setTokenBalance(INITIAL_TOKEN_AMOUNT);
-            walletMapper.updateTokenBalance(userId, INITIAL_TOKEN_AMOUNT);
-
-            if (!user.isHasReceivedToken()) {
-                userMapper.updateUserTokenStatus(userId, true);
-            }
+            // 오류 발생 시 기존 토큰 상태 유지
         }
 
         log.info("=== 메타마스크 지갑 연결 완료 ===");
@@ -217,23 +230,26 @@ public class WalletService {
             wallet.setTokenBalance(originalBalance);
             log.info("기존 지갑 업데이트 완료, 토큰 잔액 유지: {}", originalBalance);
         } else {
-            // 새 지갑 생성
+            // 새 지갑 생성 - 초기 토큰 잔액은 0으로 설정
             wallet = Wallet.builder()
                     .userId(userId)
                     .walletAddress(walletAddress)
                     .privateKey(privateKey)
                     .walletType("INTERNAL")
-                    .tokenBalance(INITIAL_TOKEN_AMOUNT)
+                    .tokenBalance(0)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
 
             walletMapper.insertWallet(wallet);
+            log.info("새 지갑 생성 완료, 초기 토큰 잔액: 0");
 
-            // 첫 지갑 생성 시 토큰 발급 상태 업데이트
+            // 토큰 발급 (has_received_token이 false인 경우에만)
             if (!user.isHasReceivedToken()) {
+                wallet.setTokenBalance(INITIAL_TOKEN_AMOUNT);
+                walletMapper.updateTokenBalance(userId, INITIAL_TOKEN_AMOUNT);
                 userMapper.updateUserTokenStatus(userId, true);
-                log.info("초기 토큰 발급 완료: {} 토큰", INITIAL_TOKEN_AMOUNT);
+                log.info("토큰 최초 발급 완료: {} 토큰", INITIAL_TOKEN_AMOUNT);
             }
         }
 
@@ -254,14 +270,18 @@ public class WalletService {
     public WalletResponseDTO getWalletStatus(String userId) {
         log.info("=== 지갑 상태 조회 시작: {} ===", userId);
 
+        User user = userMapper.findByUserId(userId)
+                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
+
         Optional<Wallet> walletOpt = walletMapper.findByUserId(userId);
 
         return walletOpt.map(wallet -> {
-                    log.info("지갑 발견: type={}, balance={}", wallet.getWalletType(), wallet.getTokenBalance());
+                    log.info("지갑 발견: type={}, balance={}, has_received_token={}",
+                            wallet.getWalletType(), wallet.getTokenBalance(), user.isHasReceivedToken());
 
-                    // 메타마스크 지갑이고 토큰이 0이면 발급 시도
-                    if ("METAMASK".equals(wallet.getWalletType()) && wallet.getTokenBalance() == 0) {
-                        log.info("토큰이 0인 메타마스크 지갑 감지, 토큰 발급 시도");
+                    // 메타마스크 지갑이고 토큰을 발급받은 적이 없는 경우에만 발급 시도
+                    if ("METAMASK".equals(wallet.getWalletType()) && !user.isHasReceivedToken()) {
+                        log.info("토큰을 발급받은 적이 없는 메타마스크 지갑 감지, 토큰 발급 시도");
 
                         try {
                             // 블록체인에서 실제 잔액 확인
@@ -285,14 +305,19 @@ public class WalletService {
                                     wallet.setTokenBalance(tokenBalance);
                                     log.info("블록체인 발급 실패, DB만 업데이트");
                                 }
+                            } else {
+                                userMapper.updateUserTokenStatus(userId, true);
+                                log.info("블록체인에 이미 토큰이 있음, 사용자 토큰 발급 상태 업데이트");
                             }
                         } catch (Exception e) {
                             log.error("토큰 발급 중 오류: {}", e.getMessage());
-                            // 오류 시에도 DB는 업데이트
-                            wallet.setTokenBalance(INITIAL_TOKEN_AMOUNT);
-                            walletMapper.updateTokenBalance(userId, INITIAL_TOKEN_AMOUNT);
-                            userMapper.updateUserTokenStatus(userId, true);
                         }
+                    } else if ("INTERNAL".equals(wallet.getWalletType()) && !user.isHasReceivedToken() && wallet.getTokenBalance() == 0) {
+                        // 내부 지갑이고 토큰을 발급받은 적이 없는 경우에만 발급
+                        wallet.setTokenBalance(INITIAL_TOKEN_AMOUNT);
+                        walletMapper.updateTokenBalance(userId, INITIAL_TOKEN_AMOUNT);
+                        userMapper.updateUserTokenStatus(userId, true);
+                        log.info("내부 지갑 토큰 최초 발급 완료: {} 토큰", INITIAL_TOKEN_AMOUNT);
                     }
 
                     return WalletResponseDTO.builder()
@@ -428,6 +453,33 @@ public class WalletService {
     /**
      * 토큰 차감 (내부 지갑용)
      */
+//    @Transactional
+//    public WalletResponseDTO deductToken(String userId, int amount) {
+//        Wallet wallet = walletMapper.findByUserId(userId)
+//                .orElseThrow(() -> new CustomException("연결된 지갑이 없습니다."));
+//
+//        if ("METAMASK".equals(wallet.getWalletType())) {
+//            throw new CustomException("메타마스크 지갑은 직접 트랜잭션을 보내야 합니다.");
+//        }
+//
+//        if (wallet.getTokenBalance() < amount) {
+//            throw new CustomException("토큰 잔액이 부족합니다.");
+//        }
+//
+//        int newBalance = wallet.getTokenBalance() - amount;
+//        wallet.setTokenBalance(newBalance);
+//        wallet.setUpdatedAt(LocalDateTime.now());
+//        walletMapper.updateTokenBalance(userId, newBalance);
+//
+//        log.info("토큰 차감 완료: userId={}, amount={}, 남은 토큰={}", userId, amount, newBalance);
+//
+//        return WalletResponseDTO.builder()
+//                .walletAddress(wallet.getWalletAddress())
+//                .tokenBalance(newBalance)
+//                .walletType(wallet.getWalletType())
+//                .connected(true)
+//                .build();
+//    }
     @Transactional
     public WalletResponseDTO deductToken(String userId, int amount) {
         Wallet wallet = walletMapper.findByUserId(userId)

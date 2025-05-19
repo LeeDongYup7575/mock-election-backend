@@ -11,17 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostSummaryResponseDTO {
+public class NoticeSummaryDTO {
     private Long id;
-    private Long categoryId;
     private String title;
-
-    private String thumbnailUrl;
-    private Integer voteCount;
-    private Integer views;
+    private String summaryContent;
     private LocalDateTime createdAt;
-
-    private String categoryName;
-    private String authorNickname;
-    private Integer commentCount;
 }
