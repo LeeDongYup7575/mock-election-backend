@@ -31,6 +31,61 @@
         ORDER BY sort_order ASC
     </select>
 
+    <!-- 활성화된 게시판에 속하는 게시글 전체 개수 조회 -->
+    <select id="selectPostCountFromActiveCategories" resultType="Integer">
+        SELECT COUNT(*)
+        FROM post
+                 JOIN category ON post.category_id = category.id
+        WHERE category.is_active = TRUE
+          AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectPostCountByCategoryWithSearch" resultType="Integer">
+        SELECT COUNT(*)
+        FROM post
+        JOIN category ON post.category_id = category.id
+        JOIN user ON post.author_id = user.user_id
+        WHERE category.code = #{categoryCode}
+        AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+
+
     <!-- 카테고리별 게시글 개수 조회 -->
     <select id="selectPostCountByCategory" resultType="int">
         SELECT COUNT(*)
@@ -38,6 +93,16 @@
                  JOIN category ON post.category_id = category.id
         WHERE category.code = #{categoryCode}
           AND post.is_deleted = 0
+    </select>
+
+    <!-- code로 익명 게시판 여부 조회 -->
+    <select id="selectIsAnonymousByCode" resultType="boolean">
+        SELECT is_anonymous FROM category WHERE code = #{code}
+    </select>
+
+    <!-- id로 익명 게시판 여부 조회 -->
+    <select id="selectIsAnonymousById" resultType="boolean">
+        SELECT is_anonymous FROM category WHERE id = #{id}
     </select>
 
     <!-- 상태 업데이트 -->

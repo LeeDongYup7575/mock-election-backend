@@ -17,6 +17,7 @@
             category.code AS category_code,
             category.name AS category_name,
             user.nickname AS author_nickname,
+            category.is_anonymous AS anonymous,
             (
                 SELECT COUNT(*)
                 FROM post_comment
@@ -29,26 +30,140 @@
         WHERE post.id = #{id}
     </select>
 
+    <!-- 활성화된 카테고리에 속한 게시글 전체 조회 -->
+    <select id="selectPostsFromActiveCategories" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = FALSE
+            ) AS commentCount
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE category.is_active = TRUE
+          AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+        ORDER BY post.created_at DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <!-- 카테고리별 게시글 조회 -->
     <select id="selectPostsByCategory" resultType="com.example.mockvoting.domain.community.dto.PostSummaryResponseDTO">
         SELECT
             post.id,
             post.category_id,
             post.title,
-            post.author_id,
             post.thumbnail_url,
             (post.upvotes - post.downvotes) AS voteCount,
             post.views,
             post.created_at,
             category.name AS categoryName,
-            user.nickname AS authorNickname
+            user.nickname AS authorNickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = FALSE
+            ) AS commentCount
         FROM post
                  JOIN category ON post.category_id = category.id
                  JOIN user ON post.author_id = user.user_id
         WHERE category.code = #{categoryCode}
-          AND post.is_deleted = 0
+          AND post.is_deleted = FALSE
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND post.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'content'">
+                    AND post.content LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'title_content'">
+                    AND (post.title LIKE CONCAT('%', #{keyword}, '%')
+                    OR post.content LIKE CONCAT('%', #{keyword}, '%'))
+                </when>
+                <when test="searchType == 'author'">
+                    AND category.is_anonymous = FALSE
+                    AND user.nickname LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
         ORDER BY post.created_at DESC
             LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 인기 게시글 조회 -->
+    <select id="selectPopularPosts" resultType="com.example.mockvoting.domain.community.dto.PopularPostResponseDTO">
+        SELECT
+            post.id,
+            post.category_id,
+            post.title,
+            post.thumbnail_url,
+            (post.upvotes - post.downvotes) AS voteCount,
+            post.views,
+            post.created_at,
+            category.name AS categoryName,
+            user.nickname AS authorNickname,
+            (
+                SELECT COUNT(*)
+                FROM post_comment
+                WHERE post_comment.post_id = post.id
+                  AND post_comment.is_deleted = 0
+            ) AS commentCount,
+            SUBSTRING(post.content, 1, 300) AS summaryContent
+        FROM post
+                 JOIN category ON post.category_id = category.id
+                 JOIN user ON post.author_id = user.user_id
+        WHERE category.code != 'notice'
+          AND post.is_deleted = FALSE
+          AND post.created_at >= NOW() - INTERVAL 7 DAY
+        ORDER BY
+            (post.upvotes - post.downvotes) * 2 + post.views * 0.1 DESC,
+            post.created_at DESC
+            LIMIT 3
+    </select>
+
+    <!-- 최근 공지사항 조회 -->
+    <select id="selectRecentNotices" resultType="com.example.mockvoting.domain.community.dto.NoticeSummaryDTO">
+        SELECT
+            post.id,
+            post.title,
+            SUBSTRING(post.content, 1, 300) AS summaryContent,
+            post.created_at AS createdAt
+        FROM post
+                 JOIN category ON post.category_id = category.id
+        WHERE category.code = 'notice'
+          AND post.is_deleted = FALSE
+        ORDER BY post.created_at DESC
+            LIMIT 6
     </select>
 
     <!-- 게시글 조회수 업데이트 -->
@@ -57,4 +172,19 @@
         SET views = views + 1
         WHERE id = #{id}
     </update>
+
+    <!-- 게시글 id로 카테고리 id 조회 -->
+    <select id="selectCategoryIdById" resultType="Long">
+        SELECT category_id
+        FROM post
+        WHERE id = #{id}
+    </select>
+
+    <!-- 게시글 id로 게시글 작성자 userId 조회 -->
+    <select id="selectAuthorIdById" resultType="String">
+        SELECT author_id
+        FROM post
+        WHERE id = #{id}
+    </select>
+
 </mapper>
