@@ -1,5 +1,6 @@
 package com.example.mockvoting.domain.wallet.controller;
 
+import com.example.mockvoting.domain.user.entity.User;
 import com.example.mockvoting.domain.wallet.dto.WalletResponseDTO;
 import com.example.mockvoting.domain.wallet.entity.Wallet;
 import com.example.mockvoting.domain.wallet.mapper.WalletMapper;
@@ -361,12 +362,15 @@ public class WalletController {
             String userId = (String) request.getAttribute("userId");
             log.info("수동 토큰 발급 요청: userId={}", userId);
 
-            // 지갑 확인
-            Wallet wallet = walletMapper.findByUserId(userId)
-                    .orElseThrow(() -> new CustomException("지갑이 연결되어 있지 않습니다."));
+            // 사용자 확인
+            User user = userMapper.findByUserId(userId)
+                    .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다."));
 
-            // 이미 토큰이 있는지 확인
-            if (wallet.getTokenBalance() > 0) {
+            // 이미 토큰을 받은 경우 발급하지 않음
+            if (user.isHasReceivedToken()) {
+                Wallet wallet = walletMapper.findByUserId(userId)
+                        .orElseThrow(() -> new CustomException("지갑이 연결되어 있지 않습니다."));
+
                 return ResponseEntity.ok(ApiResponse.success("이미 토큰을 보유하고 있습니다.",
                         WalletResponseDTO.builder()
                                 .walletAddress(wallet.getWalletAddress())
@@ -375,6 +379,10 @@ public class WalletController {
                                 .connected(true)
                                 .build()));
             }
+
+            // 지갑 확인
+            Wallet wallet = walletMapper.findByUserId(userId)
+                    .orElseThrow(() -> new CustomException("지갑이 연결되어 있지 않습니다."));
 
             // 토큰 발급
             wallet.setTokenBalance(1);
