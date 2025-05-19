@@ -2,7 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mockvoting.domain.admin.mapper.AdminMapper">
 
-
     <select id="findAllUsers" resultType="com.example.mockvoting.domain.admin.dto.AdminDTO">
         SELECT *
         FROM user
@@ -21,4 +20,314 @@
         WHERE user_id = #{userId}
     </update>
 
+    <!-- 일별 총 게시물 수 조회 (최근 7일) -->
+    <select id="getDailyTotalPosts" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            COUNT(p.id) AS total_posts
+        FROM (
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) AS dt UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) UNION ALL
+                 SELECT CURDATE()
+             ) AS calendar
+                 LEFT JOIN `post` p ON DATE(p.created_at) &lt;= calendar.dt AND p.is_deleted != 1
+        GROUP BY calendar.dt
+        ORDER BY calendar.dt
+    </select>
+
+    <!-- 주간 총 게시물 수 조회 (이번 주) -->
+    <select id="getWeeklyTotalPosts" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            calendar.dayofweek AS day_of_week,
+            COUNT(p.id) AS total_posts
+        FROM (
+                 -- 이번 주 월요일부터 일요일까지의 날짜 생성
+                 SELECT
+                     SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY AS dt,
+                     ELT(WEEKDAY(SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY) + 1, '월', '화', '수', '목', '금', '토', '일') AS dayofweek
+                 FROM (
+                     SELECT 0 AS seq UNION ALL
+                     SELECT 1 UNION ALL
+                     SELECT 2 UNION ALL
+                     SELECT 3 UNION ALL
+                     SELECT 4 UNION ALL
+                     SELECT 5 UNION ALL
+                     SELECT 6
+                     ) AS days
+             ) AS calendar
+                 LEFT JOIN `post` p ON DATE(p.created_at) &lt;= calendar.dt AND p.is_deleted != 1
+        GROUP BY calendar.dt, calendar.dayofweek
+        ORDER BY calendar.dt
+    </select>
+
+    <!-- 월별 총 게시물 수 조회 (최근 6개월) -->
+    <select id="getMonthlyTotalPosts" resultType="map">
+        SELECT
+            DATE_FORMAT(calendar.month_date, '%Y-%m') AS `month`,
+            DATE_FORMAT(calendar.month_date, '%m') AS month_num,
+            COUNT(p.id) AS total_posts
+        FROM (
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01') AS month_date,
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 5 MONTH)) AS month_end UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 4 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 4 MONTH)) UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 3 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 3 MONTH)) UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH)) UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL
+                 SELECT
+                     DATE_FORMAT(CURDATE(), '%Y-%m-01'),
+                     LAST_DAY(CURDATE())
+             ) AS calendar
+                 LEFT JOIN `post` p ON p.created_at &lt;= calendar.month_end AND p.is_deleted != 1
+        GROUP BY calendar.month_date, `month`, month_num
+        ORDER BY calendar.month_date
+    </select>
+
+
+    <!-- 일별 총 사용자 수 조회 (최근 7일, 데이터 없는 날짜도 포함) - 누적 사용자 수로 수정 -->
+    <select id="getDailyTotalUsers" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            COUNT(DISTINCT u.id) AS total_users
+        FROM (
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) AS dt UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) UNION ALL
+                 SELECT CURDATE()
+             ) AS calendar
+                 LEFT JOIN `user` u ON u.created_at &lt;= calendar.dt AND u.active = 1
+        GROUP BY calendar.dt
+        ORDER BY calendar.dt
+    </select>
+
+    <!-- 일별 신규 사용자 수 조회 (최근 7일) -->
+    <select id="getDailyNewUsers" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            IFNULL(temp.new_users, 0) AS new_users
+        FROM (
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 6 DAY) AS dt UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 5 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 4 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 3 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 2 DAY) UNION ALL
+                 SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) UNION ALL
+                 SELECT CURDATE()
+             ) AS calendar
+                 LEFT JOIN (
+            SELECT
+                DATE(created_at) AS reg_date,
+             COUNT(*) AS new_users
+            FROM
+                `user`
+        WHERE
+            DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
+          AND active = 1
+        GROUP BY
+            DATE(created_at)
+            ) AS temp ON calendar.dt = temp.reg_date
+        ORDER BY calendar.dt
+    </select>
+
+    <!-- 월별 총 사용자 수 조회 (최근 6개월) - 누적 수정 -->
+    <select id="getMonthlyTotalUsers" resultType="map">
+        SELECT
+            DATE_FORMAT(calendar.month_date, '%Y-%m') AS `month`,
+            DATE_FORMAT(calendar.month_date, '%m') AS month_num,
+            COUNT(DISTINCT u.id) AS total_users
+        FROM (
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01') AS month_date,
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 5 MONTH)) AS month_end UNION ALL
+
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 4 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 4 MONTH)) UNION ALL
+
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 3 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 3 MONTH)) UNION ALL
+
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH)) UNION ALL
+
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01'),
+                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL
+
+                 SELECT
+                     DATE_FORMAT(CURDATE(), '%Y-%m-01'),
+                     LAST_DAY(CURDATE())
+             ) AS calendar
+                 LEFT JOIN `user` u ON u.created_at &lt;= calendar.month_end AND u.active = 1
+        GROUP BY calendar.month_date, `month`, month_num
+        ORDER BY calendar.month_date
+    </select>
+
+    <!-- 월별 신규 사용자 수 조회 (최근 6개월) -->
+    <select id="getMonthlyNewUsers" resultType="map">
+        SELECT
+            calendar.ym AS `month`,
+            calendar.m AS month_num,
+            IFNULL(temp.new_users, 0) AS new_users
+        FROM (
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m') AS ym,
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%m') AS m UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 4 MONTH), '%Y-%m'),
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 4 MONTH), '%m') UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 3 MONTH), '%Y-%m'),
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 3 MONTH), '%m') UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m'),
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%m') UNION ALL
+                 SELECT
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m'),
+                     DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%m') UNION ALL
+                 SELECT
+                     DATE_FORMAT(CURDATE(), '%Y-%m'),
+                     DATE_FORMAT(CURDATE(), '%m')
+             ) AS calendar
+                 LEFT JOIN (
+            SELECT
+                DATE_FORMAT(created_at, '%Y-%m') AS reg_month,
+                DATE_FORMAT(created_at, '%m') AS reg_month_num,
+                COUNT(*) AS new_users
+            FROM
+                `user`
+            WHERE
+                created_at BETWEEN DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+                    AND LAST_DAY(CURDATE())
+              AND active = 1
+            GROUP BY
+                reg_month, reg_month_num
+        ) AS temp ON calendar.ym = temp.reg_month
+        ORDER BY calendar.ym
+    </select>
+
+    <!-- 연별 총 사용자 수 조회 (최근 5년) -->
+    <select id="getYearlyTotalUsers" resultType="map">
+        SELECT
+            calendar.y AS `year`,
+            COUNT(DISTINCT u.id) AS total_users
+        FROM (
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 4 YEAR)) AS y UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 3 YEAR)) UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 2 YEAR)) UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 1 YEAR)) UNION ALL
+                 SELECT YEAR(CURDATE())
+             ) AS calendar
+                 LEFT JOIN `user` u ON YEAR(u.created_at) &lt;= calendar.y AND u.active = 1
+        GROUP BY calendar.y
+        ORDER BY calendar.y
+    </select>
+
+    <!-- 연별 신규 사용자 수 조회 (최근 5년) -->
+    <select id="getYearlyNewUsers" resultType="map">
+        SELECT
+            calendar.y AS `year`,
+            IFNULL(temp.new_users, 0) AS new_users
+        FROM (
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 4 YEAR)) AS y UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 3 YEAR)) UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 2 YEAR)) UNION ALL
+                 SELECT YEAR(DATE_SUB(CURDATE(), INTERVAL 1 YEAR)) UNION ALL
+                 SELECT YEAR(CURDATE())
+             ) AS calendar
+                 LEFT JOIN (
+            SELECT
+                YEAR(created_at) AS reg_year,
+                COUNT(*) AS new_users
+            FROM
+                `user`
+            WHERE
+                YEAR(created_at) BETWEEN YEAR(CURDATE()) - 4 AND YEAR(CURDATE())
+              AND active = 1
+            GROUP BY
+                reg_year
+        ) AS temp ON calendar.y = temp.reg_year
+        ORDER BY calendar.y
+    </select>
+
+
+    <!-- 주간 총 사용자 수 조회 (이번 주, 데이터 없는 날짜도 포함) - 누적 사용자 수로 수정 -->
+    <select id="getWeeklyTotalUsers" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            calendar.dayofweek AS day_of_week,
+            COUNT(DISTINCT u.id) AS total_users
+        FROM (
+                 -- 이번 주 월요일부터 일요일까지의 날짜 생성
+                 SELECT
+                     SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY AS dt,
+                     ELT(WEEKDAY(SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY) + 1, '월', '화', '수', '목', '금', '토', '일') AS dayofweek
+                 FROM (
+                     SELECT 0 AS seq UNION ALL
+                     SELECT 1 UNION ALL
+                     SELECT 2 UNION ALL
+                     SELECT 3 UNION ALL
+                     SELECT 4 UNION ALL
+                     SELECT 5 UNION ALL
+                     SELECT 6
+                     ) AS days
+             ) AS calendar
+                 LEFT JOIN `user` u ON u.created_at &lt;= calendar.dt AND u.active = 1
+        GROUP BY calendar.dt, calendar.dayofweek
+        ORDER BY calendar.dt
+    </select>
+
+    <!-- 주간 신규 사용자 수 조회 (이번 주) -->
+    <select id="getWeeklyNewUsers" resultType="map">
+        SELECT
+            calendar.dt AS `date`,
+            calendar.dayofweek AS day_of_week,
+            IFNULL(temp.new_users, 0) AS new_users
+        FROM (
+                 -- 이번 주 월요일부터 일요일까지의 날짜 생성
+                 SELECT
+                     SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY AS dt,
+                     ELT(WEEKDAY(SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL seq DAY) + 1, '월', '화', '수', '목', '금', '토', '일') AS dayofweek
+                 FROM (
+                     SELECT 0 AS seq UNION ALL
+                     SELECT 1 UNION ALL
+                     SELECT 2 UNION ALL
+                     SELECT 3 UNION ALL
+                     SELECT 4 UNION ALL
+                     SELECT 5 UNION ALL
+                     SELECT 6
+                     ) AS days
+             ) AS calendar
+                 LEFT JOIN (
+            SELECT
+                DATE(created_at) AS reg_date,
+             COUNT(*) AS new_users
+            FROM
+            `user`
+        WHERE
+            DATE(created_at) BETWEEN SUBDATE(CURDATE(), WEEKDAY(CURDATE())) AND SUBDATE(CURDATE(), WEEKDAY(CURDATE())) + INTERVAL 6 DAY
+          AND active = 1
+        GROUP BY
+            DATE(created_at)
+            ) AS temp ON calendar.dt = temp.reg_date
+        ORDER BY calendar.dt
+    </select>
 </mapper>

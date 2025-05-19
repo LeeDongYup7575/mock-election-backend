@@ -228,6 +228,14 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.17.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-resolver-dns-native-macos</artifactId>
+			<version>4.1.109.Final</version>
+			<classifier>osx-aarch_64</classifier> <!-- 또는 osx-x86_64 -->
+		</dependency>
+
 	</dependencies>
 
 	<build>

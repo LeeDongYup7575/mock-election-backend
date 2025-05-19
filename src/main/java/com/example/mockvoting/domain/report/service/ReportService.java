@@ -3,6 +3,7 @@ package com.example.mockvoting.domain.report.service;
 import com.example.mockvoting.domain.community.repository.PostCommentRepository;
 import com.example.mockvoting.domain.community.repository.PostRepository;
 import com.example.mockvoting.domain.report.dto.ReportCreateRequestDTO;
+import com.example.mockvoting.domain.report.dto.ReportDTO;
 import com.example.mockvoting.domain.report.entity.Report;
 import com.example.mockvoting.domain.report.mapper.ReportMapper;
 import com.example.mockvoting.domain.report.mapper.converter.ReportDtoMapper;
@@ -10,6 +11,9 @@ import com.example.mockvoting.domain.report.repository.ReportRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -60,5 +64,38 @@ public class ReportService {
                 targetType,
                 targetId
         );
+    }
+
+    public List<ReportDTO> getAllReports() {
+        return reportMapper.getAllReports();
+    }
+
+    public ReportDTO getReportById(Long id) {
+        return reportMapper.getReportById(id);
+    }
+
+    public void confirmReport(Long id) {
+        reportMapper.updateConfirmed(id,true);
+    }
+
+    /**
+     * 일별 신고 건수 조회
+     */
+    public List<Map<String, Object>> countReportsByDay() {
+        return reportMapper.countReportsByDay();
+    }
+
+    /**
+     * 주별 신고 건수 조회
+     */
+    public List<Map<String, Object>> countReportsByWeek() {
+        return reportMapper.countReportsByWeek();
+    }
+
+    /**
+     * 월별 신고 건수 조회
+     */
+    public List<Map<String, Object>> countReportsByMonth() {
+        return reportMapper.countReportsByMonth();
     }
 }
