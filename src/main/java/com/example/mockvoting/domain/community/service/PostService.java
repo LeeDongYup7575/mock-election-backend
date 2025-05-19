@@ -13,17 +13,21 @@ import com.example.mockvoting.domain.community.repository.PostAttachmentReposito
 import com.example.mockvoting.domain.community.repository.PostRepository;
 import com.example.mockvoting.domain.gcs.service.GcsService;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,30 +40,49 @@ public class PostService {
     private final PostAttachmentRepository postAttachmentRepository;
     private final PostDtoMapper postDtoMapper;
     private final GcsService gcsService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /**
      *  게시글 상세 조회
      */
     @Transactional
-    public PostDetailViewDTO getPostDetail(Long id, String viewedPostIds, String userId) {
-        // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
-        List<String> viewedList = viewedPostIds.isEmpty()
-                ? Collections.emptyList()
-                : Arrays.asList(viewedPostIds.split("-"));
-        boolean alreadyViewed = viewedList.contains(id.toString());
+    public PostDetailViewDTO getPostDetail(Long id, String userId) {
+//        // 1) 조회 여부 판단 - 조회하는 게시글이 이전에 사용자가 조회한 게시글인가?
+//        List<String> viewedList = viewedPostIds.isEmpty()
+//                ? Collections.emptyList()
+//                : Arrays.asList(viewedPostIds.split("-"));
+//        boolean alreadyViewed = viewedList.contains(id.toString());
+//
+//        String updatedViewedPostIds = null;
+//        if (!alreadyViewed) {
+//            // 2) 조회수 증가
+//            postMapper.updateViewCountById(id);
+//            // 3) 쿠키에 담을 새 값 계산
+//            updatedViewedPostIds = viewedPostIds.isEmpty()
+//                    ? id.toString()
+//                    : viewedPostIds + "-" + id;
+//        }
 
-        String updatedViewedPostIds = null;
-        if (!alreadyViewed) {
-            // 2) 조회수 증가
-            postMapper.updateViewCountById(id);
-            // 3) 쿠키에 담을 새 값 계산
-            updatedViewedPostIds = viewedPostIds.isEmpty()
-                    ? id.toString()
-                    : viewedPostIds + "-" + id;
-        }
+        // 반드시 수정 필요 일단 주석 처리
+//        boolean alreadyViewed = false;
+//        if (userId != null) {
+//            String key = "viewed:" + userId;
+//            alreadyViewed = Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, id.toString()));
+//            if (!alreadyViewed) {
+//                postMapper.updateViewCountById(id);
+//                stringRedisTemplate.opsForSet().add(key, id.toString());
+//                stringRedisTemplate.expire(key, Duration.ofHours(12));
+//            }
+//        }
 
         // 4) 게시글 조회
         PostDetailResponseDTO detail = postMapper.selectPostDetailById(id);
+        // 4-1) 익명 게시글이면 닉네임 가공
+        boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(detail.getCategoryCode());
+        if(isAnonymous) {
+            detail.setAuthorNickname("익명");
+        }
+
         // 5) 첨부파일 조회
         List<PostAttachmentResponseDTO> attachments = postAttachmentMapper.selectAttachmentsByPostId(id);
         detail.setAttachments(attachments);
@@ -74,9 +97,13 @@ public class PostService {
             detail.setUserVote(vote);   // detail DTO에 사용자 투표 여부 정의 (1/-1/null)
         }
 
+//        return PostDetailViewDTO.builder()
+//                .post(detail)
+//                .newViewedPostIds(updatedViewedPostIds)
+//                .build();
         return PostDetailViewDTO.builder()
                 .post(detail)
-                .newViewedPostIds(updatedViewedPostIds)
+                .newViewedPostIds(null)
                 .build();
     }
 
@@ -97,15 +124,41 @@ public class PostService {
     }
 
     /**
-     *  카테고리별 게시글 조회
+     *  카테고리별 게시글 조회 + 검색 필터
+     *  categoryCode == all -> 전체 조회
+     *  else -> 카테고리별 조회
      */
     @Transactional(readOnly = true)
-    public Page<PostSummaryResponseDTO> getPostsByCategory(String categoryCode, Pageable pageable) {
+    public Page<PostSummaryResponseDTO> getPostsByCategory(String categoryCode, Pageable pageable, String searchType, String keyword) {
         int offset = (int) pageable.getOffset();
         int limit = (int) pageable.getPageSize();
 
-        List<PostSummaryResponseDTO> posts = postMapper.selectPostsByCategory(categoryCode, offset, limit);
-        int total = categoryMapper.selectPostCountByCategory(categoryCode);
+        List<PostSummaryResponseDTO> posts;
+        int total;
+        if("all".equals(categoryCode)) {    // 활성화된 카테고리에 속한 게시글 전체 조회
+            posts = postMapper.selectPostsFromActiveCategories(offset, limit, searchType, keyword);
+            total = categoryMapper.selectPostCountFromActiveCategories(searchType, keyword);
+
+            // 각 게시글의 카테고리에 따라 익명 처리
+            for (PostSummaryResponseDTO post : posts) {
+                boolean isAnonymous = categoryMapper.selectIsAnonymousById(post.getCategoryId());
+                if (isAnonymous) {
+                    post.setAuthorNickname("익명");
+                }
+            }
+
+        }else{  // 카테고리별 게시글 조회
+            posts = postMapper.selectPostsByCategory(categoryCode, offset, limit, searchType, keyword);
+            total = categoryMapper.selectPostCountByCategoryWithSearch(categoryCode, searchType, keyword);
+
+            // 익명 처리
+            boolean isAnonymous = categoryMapper.selectIsAnonymousByCode(categoryCode);
+            if(isAnonymous) {
+                for (PostSummaryResponseDTO post : posts) {
+                    post.setAuthorNickname("익명");
+                }
+            }
+        }
 
         return new PageImpl<>(posts, pageable, total);
     }

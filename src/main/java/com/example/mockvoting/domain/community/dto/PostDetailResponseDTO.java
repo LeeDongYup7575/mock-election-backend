@@ -29,4 +29,5 @@ public class PostDetailResponseDTO {
     private List<PostAttachmentResponseDTO> attachments;
     private Integer commentCount;
     private Byte userVote; // 1: upvote, -1: downvote, null: 투표 안함
+    private boolean anonymous;
 }

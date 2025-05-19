@@ -6,8 +6,10 @@ import com.example.mockvoting.domain.community.dto.PostCommentResponseDTO;
 import com.example.mockvoting.domain.community.dto.PostCommentUpdateRequestDTO;
 import com.example.mockvoting.domain.community.entity.CommunityVote;
 import com.example.mockvoting.domain.community.entity.PostComment;
+import com.example.mockvoting.domain.community.mapper.CategoryMapper;
 import com.example.mockvoting.domain.community.mapper.CommunityVoteMapper;
 import com.example.mockvoting.domain.community.mapper.PostCommentMapper;
+import com.example.mockvoting.domain.community.mapper.PostMapper;
 import com.example.mockvoting.domain.community.mapper.converter.PostCommentDtoMapper;
 import com.example.mockvoting.domain.community.repository.PostCommentRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostCommentService {
     private final PostCommentMapper postCommentMapper;
+    private final PostMapper postMapper;
+    private final CategoryMapper categoryMapper;
     private final CommunityVoteMapper communityVoteMapper;
     private final PostCommentRepository postCommentRepository;
     private final PostCommentDtoMapper postCommentDtoMapper;
@@ -56,6 +60,28 @@ public class PostCommentService {
             parentIds = children.stream()
                     .map(PostCommentResponseDTO::getId)
                     .collect(Collectors.toList());
+        }
+
+        // 2-1) 익명 게시판 여부 확인 및 시간 순 익명 매핑 (삭제 필터링 이전)
+        Long categoryId     = postMapper.selectCategoryIdById(postId);
+        boolean isAnonymous = categoryMapper.selectIsAnonymousById(categoryId);
+        String postAuthorId = postMapper.selectAuthorIdById(postId);
+        if (isAnonymous) {
+            List<PostCommentResponseDTO> byTime = new ArrayList<>(all);
+            byTime.sort(Comparator.comparing(PostCommentResponseDTO::getCreatedAt));
+
+            Map<String, String> anonymousMap = new LinkedHashMap<>();
+            int counter = 1;
+            for (PostCommentResponseDTO comment : byTime) {
+                String authorId = comment.getAuthorId();
+                if (authorId.equals(postAuthorId)) {
+                    comment.setAnonymousNickname("익명(글쓴이)");
+                } else {
+                    anonymousMap.putIfAbsent(authorId, "익명 " + counter++);
+                    comment.setAnonymousNickname(anonymousMap.get(authorId));
+                }
+                comment.setAuthorNickname(null);
+            }
         }
 
         // 3) parentId → List<child> 매핑
