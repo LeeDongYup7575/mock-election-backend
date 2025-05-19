@@ -86,7 +86,12 @@ public class VotingService {
             Wallet wallet = walletMapper.findByUserId(userId)
                     .orElseThrow(() -> new CustomException("투표하려면 지갑 연결이 필요합니다."));
 
-            // 4. 토큰 차감
+            // 4. 메타마스크 지갑 확인 - 이 부분을 추가
+            if ("METAMASK".equals(wallet.getWalletType())) {
+                throw new CustomException("메타마스크 지갑은 메타마스크 투표 API를 사용해주세요.");
+            }
+
+            // 5. 토큰 차감 - 내부 지갑인 경우에만 실행
             if (wallet.getTokenBalance() < 1) {
                 throw new CustomException("투표에 필요한 토큰이 부족합니다.");
             }
@@ -127,9 +132,6 @@ public class VotingService {
         }
     }
 
-    /**
-     * 메타마스크 투표 검증 및 제출 (candidateId로 처리)
-     */
     @Transactional
     public VotingStatsDTO verifyAndSubmitMetaMaskVoting(String sgId, Integer candidateId, String userId, String transactionHash) {
         // 1. 사용자 조회
@@ -159,7 +161,7 @@ public class VotingService {
                 throw new CustomException("유효하지 않은 투표 트랜잭션입니다.");
             }
         } else {
-            // DB 토큰 차감
+            // DB 토큰 차감 - 직접 처리
             if (wallet.getTokenBalance() < 1) {
                 throw new CustomException("투표에 필요한 토큰이 부족합니다.");
             }
