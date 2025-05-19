@@ -12,6 +12,7 @@ import com.example.mockvoting.domain.community.mapper.converter.PostDtoMapper;
 import com.example.mockvoting.domain.community.repository.PostAttachmentRepository;
 import com.example.mockvoting.domain.community.repository.PostRepository;
 import com.example.mockvoting.domain.gcs.service.GcsService;
+import com.example.mockvoting.domain.spamcheck.service.CaptchaService;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ public class PostService {
     private final PostAttachmentRepository postAttachmentRepository;
     private final PostDtoMapper postDtoMapper;
     private final GcsService gcsService;
+    private final CaptchaService captchaService;
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
@@ -182,7 +184,17 @@ public class PostService {
      *  게시글 등록 (첨부파일 포함)
      */
     @Transactional
-    public Long save(PostCreateRequestDTO dto, List<MultipartFile> files) {
+    public Long save(PostCreateRequestDTO dto, List<MultipartFile> files, String authorId) {
+        dto.setAuthorId(authorId);
+
+        // 신규 작성일 때만 캡챠 검증
+        if (dto.getCaptchaToken() != null && !dto.getCaptchaToken().isBlank()) {
+            boolean verified = captchaService.verifyToken(dto.getCaptchaToken());
+            if (!verified) {
+                throw new IllegalArgumentException("캡챠 검증 실패");
+            }
+        }
+
         Post post = postDtoMapper.toEntity(dto);
 
         // 썸네일이 없으면 기본 이미지 경로로 설정

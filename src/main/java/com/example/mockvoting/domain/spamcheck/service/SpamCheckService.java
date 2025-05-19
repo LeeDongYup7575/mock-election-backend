@@ -3,6 +3,7 @@ package com.example.mockvoting.domain.spamcheck.service;
 import com.example.mockvoting.domain.spamcheck.dto.PostContentCheckDTO;
 import com.example.mockvoting.domain.spamcheck.mapper.SpamCheckMapper;
 import com.example.mockvoting.domain.spamcheck.model.SpamCheckType;
+import com.example.mockvoting.util.SpamSimilarityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,9 @@ public class SpamCheckService {
     private final SpamCheckMapper spamCheckMapper;
     private final SpamSimilarityUtil similarityUtil;
 
+    /**
+     * 도배 의심 여부 판단 (게시글/댓글 공용)
+     */
     public boolean isSuspicious(String userId, SpamCheckType type, String title, String content) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -25,7 +29,7 @@ public class SpamCheckService {
             case POST_COMMENT -> spamCheckMapper.selectRecentComments(userId, oneMinuteAgo).size();
             default -> 0;
         };
-        if (recentCount >= 3) return true;
+        if (recentCount >= 2) return true;
 
         // 조건 2: 10분 내 유사 내용 여부
         LocalDateTime tenMinutesAgo = now.minusMinutes(10);
@@ -45,7 +49,7 @@ public class SpamCheckService {
                     if (similarityUtil.calculateSimilarity(current, prev) >= 0.8) return true;
                 }
             }
-            default -> {} // FEED 등은 추후 구현
+            default -> {}
         }
 
         return false;

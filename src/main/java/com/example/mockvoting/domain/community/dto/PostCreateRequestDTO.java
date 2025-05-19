@@ -16,4 +16,6 @@ public class PostCreateRequestDTO {
     private String content;
     private String authorId;
     private String thumbnailUrl;
+
+    private String captchaToken;
 }
