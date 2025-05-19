@@ -12,4 +12,76 @@
               AND target_id = #{targetId}
         )
     </select>
+
+    <select id="getAllReports" resultType="com.example.mockvoting.domain.report.dto.ReportDTO">
+        SELECT
+            r.id,
+            rt.name AS reportTypeName,
+            r.reporter_id AS reporterId,
+            r.reported_user_id AS reportedUserId,
+            r.target_type AS targetType,
+            r.target_id AS targetId,
+            r.reason,
+            r.is_confirmed AS isConfirmed,
+            DATE_FORMAT(r.reported_at, '%Y-%m-%d %H:%i:%s') AS reportedAt
+        FROM report r
+                 JOIN report_type rt ON r.report_type_id = rt.id
+        ORDER BY r.reported_at DESC
+    </select>
+
+    <!-- 단일 신고 상세 -->
+    <select id="getReportById" parameterType="long" resultType="com.example.mockvoting.domain.report.dto.ReportDTO">
+        SELECT
+            r.id,
+            rt.name    AS reportTypeName,
+            r.reporter_id       AS reporterId,
+            r.reported_user_id  AS reportedUserId,
+            r.target_type       AS targetType,
+            r.target_id         AS targetId,
+            r.reason,
+            r.is_confirmed      AS isConfirmed,
+            DATE_FORMAT(r.reported_at, '%Y-%m-%d %H:%i:%s') AS reportedAt
+        FROM report r
+                 JOIN report_type rt ON r.report_type_id = rt.id
+        WHERE r.id = #{id}
+    </select>
+
+    <!-- is_confirmed 업데이트 -->
+    <update id="updateConfirmed" parameterType="map">
+        UPDATE report
+        SET is_confirmed = #{confirmed}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 일별 신고 건수 조회 -->
+    <select id="countReportsByDay" resultType="map">
+        SELECT
+            DATE(r.reported_at) AS period,
+            COUNT(*) AS count
+        FROM report r
+        GROUP BY DATE(r.reported_at)
+        ORDER BY DATE(r.reported_at) DESC
+    </select>
+
+    <!-- 주별 신고 건수 조회 -->
+    <select id="countReportsByWeek" resultType="map">
+        SELECT
+            YEAR(r.reported_at) AS year,
+            WEEK(r.reported_at, 1) AS week,
+            COUNT(*) AS count
+        FROM report r
+        GROUP BY YEAR(r.reported_at), WEEK(r.reported_at, 1)
+        ORDER BY YEAR(r.reported_at) DESC, WEEK(r.reported_at, 1) DESC
+    </select>
+
+    <!-- 월별 신고 건수 조회 -->
+    <select id="countReportsByMonth" resultType="map">
+        SELECT
+            DATE_FORMAT(r.reported_at, '%Y-%m') AS period,
+            COUNT(*) AS count
+        FROM report r
+        GROUP BY DATE_FORMAT(r.reported_at, '%Y-%m')
+        ORDER BY DATE_FORMAT(r.reported_at, '%Y-%m') DESC
+    </select>
+
 </mapper>
