@@ -63,17 +63,17 @@ public class PostService {
 //                    : viewedPostIds + "-" + id;
 //        }
 
-        // 반드시 수정 필요 일단 주석 처리
-//        boolean alreadyViewed = false;
-//        if (userId != null) {
-//            String key = "viewed:" + userId;
-//            alreadyViewed = Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, id.toString()));
-//            if (!alreadyViewed) {
-//                postMapper.updateViewCountById(id);
-//                stringRedisTemplate.opsForSet().add(key, id.toString());
-//                stringRedisTemplate.expire(key, Duration.ofHours(12));
-//            }
-//        }
+//         반드시 수정 필요 일단 주석 처리
+        boolean alreadyViewed = false;
+        if (userId != null) {
+            String key = "viewed:" + userId;
+            alreadyViewed = Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, id.toString()));
+            if (!alreadyViewed) {
+                postMapper.updateViewCountById(id);
+                stringRedisTemplate.opsForSet().add(key, id.toString());
+                stringRedisTemplate.expire(key, Duration.ofHours(12));
+            }
+        }
 
         // 4) 게시글 조회
         PostDetailResponseDTO detail = postMapper.selectPostDetailById(id);
