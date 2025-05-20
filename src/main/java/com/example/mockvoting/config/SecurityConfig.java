@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests
+                        .requestMatchers("/wss/**").permitAll() // WebSocket
                         .requestMatchers("/api/users/oauth2/**").permitAll()
                         .requestMatchers("/api/polling/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
@@ -55,7 +56,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/election/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
-                        .requestMatchers("/wss/**").permitAll() // WebSocket
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(
@@ -70,7 +70,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList(frontUrl));
+        configuration.setAllowedOrigins(Arrays.asList("https://mock-election-frontend.web.app"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
