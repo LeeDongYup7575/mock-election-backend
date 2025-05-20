@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mockvoting.domain.spamcheck.mapper.SpamCheckMapper">
+
+    <!-- 게시글: 최근 1분/10분 내 글 목록 -->
+    <select id="selectRecentPosts" resultType="com.example.mockvoting.domain.spamcheck.dto.PostContentCheckDTO">
+        SELECT title, content
+        FROM post
+        WHERE author_id = #{userId}
+          AND created_at >= #{since}
+          AND is_deleted = FALSE
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 댓글: 최근 1분/10분 내 댓글 목록 -->
+    <select id="selectRecentComments" resultType="String">
+        SELECT content
+        FROM post_comment
+        WHERE author_id = #{userId}
+          AND created_at >= #{since}
+          AND is_deleted = FALSE
+        ORDER BY created_at DESC
+    </select>
+
+
+</mapper>
