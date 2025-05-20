@@ -58,7 +58,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 path.equals("/api/community/main") ||
                 path.startsWith("/api/community/categories")||
                 (path.startsWith("/api/community/posts") && method.equals("GET") && !path.matches(".*/edit$"))||
-                (path.startsWith("/ws"))
+                (path.startsWith("/wss"))||
+                path.startsWith("/api/election/list") ||
+                path.startsWith("/api/candidate/list") && method.equals("GET") ||
+                path.startsWith("/api/detail") && method.equals("GET") ||
+                path.startsWith("/api/news/newsdata")
         ) {
             filterChain.doFilter(request, response);
             return;

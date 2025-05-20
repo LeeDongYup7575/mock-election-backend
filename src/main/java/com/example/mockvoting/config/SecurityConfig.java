@@ -50,9 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/community/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/*/edit").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
-                        .requestMatchers("/api/news/**").permitAll()
-                        .requestMatchers("/api/candidate/**").permitAll()
-                        .requestMatchers("/api/election/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/news/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/candidate/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/election/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/wss/**").permitAll() // WebSocket
