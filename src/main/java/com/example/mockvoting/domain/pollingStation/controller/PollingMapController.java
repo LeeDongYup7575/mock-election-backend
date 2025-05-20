@@ -47,11 +47,11 @@ public class PollingMapController {
             HttpEntity<?> entity = new HttpEntity<>(headers);
 
             // API 호출 및 응답 수신
-            ResponseEntity<String> response = restTemplate.exchange(
+            ResponseEntity<Map> response = restTemplate.exchange(
                     builder.toUriString(),
                     HttpMethod.GET,
                     entity,
-                    String.class);
+                    Map.class);
 
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
