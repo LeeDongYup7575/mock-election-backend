@@ -109,12 +109,14 @@ public class PostController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Long>> create(@RequestPart PostCreateRequestDTO dto,
-                                                        @RequestPart(value="attachments", required = false) List<MultipartFile> attachments
+                                                    @RequestPart(value="attachments", required = false) List<MultipartFile> attachments,
+                                                    HttpServletRequest request
     ) {
-        log.info("게시글 등록 요청: {}", dto.getTitle());
+        String userId = (String) request.getAttribute("userId");
+        log.info("게시글 등록 요청: {}", userId);
 
         try {
-            Long postId = postService.save(dto, attachments);
+            Long postId = postService.save(dto, attachments, userId);
             log.info("게시글 등록 요청 처리 성공: id={}", postId);
             return ResponseEntity.ok(ApiResponse.success("게시글 등록 성공", postId));
         } catch (Exception e) {

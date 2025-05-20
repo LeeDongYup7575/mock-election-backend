@@ -236,6 +236,13 @@
 			<classifier>osx-aarch_64</classifier> <!-- 또는 osx-x86_64 -->
 		</dependency>
 
+		<!-- Apache Commons Text: 문자열 유사도 계산 (LevenshteinDistance) 용도 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.12.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
