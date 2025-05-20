@@ -43,6 +43,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests
                         .requestMatchers("/api/users/oauth2/**").permitAll()
+                        .requestMatchers("/api/polling/**").permitAll()
+                        .requestMatchers("/api/youtube/**").permitAll()
                         .requestMatchers("/api/community/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/*/edit").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
