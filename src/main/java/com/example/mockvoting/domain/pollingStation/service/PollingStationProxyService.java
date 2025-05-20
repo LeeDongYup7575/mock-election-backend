@@ -56,8 +56,7 @@ public class PollingStationProxyService {
 
             URI uri = builder.build().encode().toUri();
 
-            ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
-
+            ResponseEntity<Map> response = restTemplate.getForEntity(uri, Map.class);
             System.out.println("🔍 공공 API 요청 URI: " + uri);
             System.out.println("🔍 공공 API 응답 바디: " + response.getBody());
 
