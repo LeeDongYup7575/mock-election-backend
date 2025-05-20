@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/oauth2/**").permitAll()
                         .requestMatchers("/api/polling/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/community/main").permitAll()
                         .requestMatchers("/api/community/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/*/edit").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
