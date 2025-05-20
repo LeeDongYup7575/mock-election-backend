@@ -58,6 +58,9 @@ public class PollingStationProxyService {
 
             ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
+            System.out.println("🔍 공공 API 요청 URI: " + uri);
+            System.out.println("🔍 공공 API 응답 바디: " + response.getBody());
+
             return ResponseEntity.ok(response.getBody());
 
         } catch (Exception e) {
