@@ -53,6 +53,21 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 특정 사용자에 대한 확인된 신고 수 카운트 -->
+    <select id="countConfirmedReportsAgainstUser" resultType="int">
+        SELECT COUNT(*)
+        FROM report
+        WHERE reported_user_id = #{userId}
+          AND is_confirmed = true
+    </select>
+
+    <!-- 사용자 비활성화 (active=0으로 설정) -->
+    <update id="deactivateUser">
+        UPDATE user
+        SET active = 0
+        WHERE user_id = #{userId}
+    </update>
+
     <!-- 일별 신고 건수 조회 -->
     <select id="countReportsByDay" resultType="map">
         SELECT
