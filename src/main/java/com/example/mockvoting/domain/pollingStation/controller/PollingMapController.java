@@ -55,6 +55,7 @@ public class PollingMapController {
 
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
