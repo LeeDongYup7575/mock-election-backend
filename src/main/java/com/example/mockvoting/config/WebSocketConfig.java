@@ -44,7 +44,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         log.info("Setting up STOMP endpoints with allowed origin: {}", frontUrl);
         // WebSocket 연결을 위한 엔드포인트 설정
         registry.addEndpoint("/wss")
-                .setAllowedOrigins(frontUrl) // '*' 대신 특정 URL
+                .setAllowedOrigins("https://mock-387948012196.asia-northeast3.run.app") // '*' 대신 특정 URL
                 .withSockJS();
     }
 
