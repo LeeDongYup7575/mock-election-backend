@@ -25,6 +25,12 @@ public interface ReportMapper {
     int updateConfirmed(@Param("id") Long id,
                         @Param("confirmed") boolean confirmed);
 
+    // 사용자에 대한 확인된 신고 수 조회
+    int countConfirmedReportsAgainstUser(@Param("userId") String userId);
+
+    // 사용자 비활성화 (active=0으로 설정)
+    int deactivateUser(@Param("userId") String userId);
+
     List<Map<String, Object>> countReportsByDay();
     List<Map<String, Object>> countReportsByWeek();
     List<Map<String, Object>> countReportsByMonth();
