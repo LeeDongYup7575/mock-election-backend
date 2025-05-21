@@ -33,7 +33,10 @@ public class PollingStationProxyController {
     @GetMapping("/getPrePolplcOtlnmapTrnsportInfoInqire")
     public ResponseEntity<Object> getPrePollingStations(
             @RequestParam Map<String, String> params) {
-        return pollingStationProxyService.getPrePollingStationsData(params);
+       ResponseEntity<Object> response =  pollingStationProxyService.getPrePollingStationsData(params);
+       System.out.println(response);
+       System.out.println(response.getBody());
+        return response;
     }
 
 }
