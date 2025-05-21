@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/polling/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
                         .requestMatchers("/api/glossary/**").permitAll()
+                        .requestMatchers("/api/policyQuestion/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/community/main").permitAll()
                         .requestMatchers("/api/community/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/*/edit").authenticated()
