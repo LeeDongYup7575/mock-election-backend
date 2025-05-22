@@ -10,14 +10,21 @@ import com.example.mockvoting.domain.report.mapper.converter.ReportDtoMapper;
 import com.example.mockvoting.domain.report.repository.ReportRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReportService {
+
+    // 사용자 비활성화 임계값 (확인된 신고 횟수)
+    private static final int DEACTIVATION_THRESHOLD = 3;
+
     private final ReportMapper reportMapper;
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
@@ -74,8 +81,23 @@ public class ReportService {
         return reportMapper.getReportById(id);
     }
 
+    @Transactional
     public void confirmReport(Long id) {
-        reportMapper.updateConfirmed(id,true);
+        // 신고 확인 처리
+        reportMapper.updateConfirmed(id, true);
+
+        // 처리된 신고 정보 조회
+        ReportDTO report = reportMapper.getReportById(id);
+        String reportedUserId = report.getReportedUserId();
+
+        // 해당 사용자에 대한 확인된 신고 수 조회
+        int confirmedReportCount = reportMapper.countConfirmedReportsAgainstUser(reportedUserId);
+
+        // 임계값(3회) 이상 신고되었다면 사용자 비활성화
+        if (confirmedReportCount >= DEACTIVATION_THRESHOLD) {
+            log.info("사용자 ID: {} - {}회 이상 신고되어 계정이 비활성화됩니다.", reportedUserId, DEACTIVATION_THRESHOLD);
+            reportMapper.deactivateUser(reportedUserId);
+        }
     }
 
     /**
