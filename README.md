@@ -4,17 +4,113 @@
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> 선견지표 실시간 선거 여론조사 플랫폼의 백엔드 API 서버
+> 선견지표 실시간 선거 정보 플랫폼의 백엔드 API 서버
 
 ## 📋 프로젝트 개요
 
-선견지표의 백엔드는 Spring Boot 기반의 REST API 서버로 유권자들이 후보자와 정책에 대한 정보를 쉽고 정확하게 이해하고 비교할 수 있도록 돕는 **디지털 선거 정보 플랫폼**입니다.
+선견지표 백엔드는 Spring Boot 기반의 REST API 서버로, 디지털 선거 정보 플랫폼의 핵심 비즈니스 로직과 데이터 처리를 담당합니다.
 
 **본 사이트는 교육 목적으로 제작된 모의 플랫폼으로, 특정 정당이나 후보를 지지하지 않습니다.**
 
 
+## 프로젝트 화면 미리보기
 
-### 🎯 주요 기능
+###  메인 대시보드
+![메인 대시보드](/src/main/resources/static/assets/readme/main.jpg)
+
+---
+
+## **핵심 기능 - 선거 정보 & 투표**
+
+###  후보·정책 비교
+![후보 정책 비교](/src/main/resources/static/assets/readme/candidate-compare.jpg)
+
+###  실시간 모의투표 페이지
+![모의투표 화면](/src/main/resources/static/assets/readme/mock-voting.jpg)
+
+###  투표소 지도 
+![투표소 지도](/src/main/resources/static/assets/readme/find-polling-station.jpg)
+
+---
+
+## **소통 & 커뮤니티 기능**
+
+###  실시간 채팅
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/chat1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/chat2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">비속어 필터링 시스템</td>
+<td align="center">참가자 목록</td>
+</tr>
+</table>
+
+###  커뮤니티
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/community1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/community2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">게시글 목록형</td>
+<td align="center">게시글 카드형</td>
+</tr>
+<tr>
+<td colspan="2" align="center"><img src="/src/main/resources/static/assets/readme/community3.jpg" width="400"></td>
+</tr>
+</table>
+
+---
+
+##  **AI 지원 기능**
+
+
+###  챗봇 QnA
+![챗봇 QnA](/src/main/resources/static/assets/readme/chatbot.jpg)
+
+###  정책 단어 검색
+![정책 단어 검색](/src/main/resources/static/assets/readme/policy-terms.jpg)
+
+---
+
+## **교육 & 참여 기능**
+
+###  정책 퀴즈
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/electionQuiz1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/electionQuiz2.jpg" width="400"></td>
+</tr>
+</table>
+
+---
+
+###  관리자 페이지
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/admin1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/admin2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">대시보드</td>
+<td align="center">회원 관리</td>
+</tr>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/admin3.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/admin4.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">게시판 관리</td>
+<td align="center">신고내역</td>
+</tr>
+</table>
+
+---
+
+## 🎯 주요 기능
+
 - **후보·정책 비교**: 공약, 정책, 경력 등 항목별 후보 정보 제공
 - **가상 투표 시뮬레이터**: 실제 투표처럼 해보고 결과를 통계로 확인
 - **정책 퀴즈**: 재미있게 정치 리터러시 향상
@@ -27,8 +123,12 @@
 - **정책 단어 검색** : 팝업 기능 구현
 - **마이페이지, 관리자 페이지** 구현 : 회원 정보 수정, 회원 관리, 게시판 관리, 신고 내역 관리
 
+---
 
 ## 🛠 기술 스택
+
+![기술 스택](/src/main/resources/static/assets/readme/techstack.jpg)
+*프로젝트에서 사용된 주요 기술들*
 
 ### Backend
 - **Spring Boot** 3.x
@@ -81,3 +181,51 @@
 - **Notion** - 문서화
 - **Slack** - 소통
 - **Git, GitHub**: 버전 관리
+
+---
+
+## 🚀 프로젝트 설치 및 실행
+
+### 필수 요구사항
+- Java 17+, Maven 3.6+
+- MySQL 8.0+, MongoDB 4.4+
+
+### 실행하기
+
+```bash
+# 1. 저장소 클론
+git clone https://github.com/kdt-proj1-team/mock-election-backend.git
+cd mock-election-backend
+
+# 2. 데이터베이스 설정 (MySQL)
+mysql -u root -p
+CREATE DATABASE election_db;
+
+# 3. MongoDB 실행 (별도 터미널)
+mongod
+
+# 4. 애플리케이션 실행
+./mvnw spring-boot:run
+```
+
+---
+
+## 👥 팀 구성 및 역할
+
+| 역할 | 이름 | 주요 담당 | 이메일 | GitHub |
+|------|------|-----------|--------|--------|
+| **팀장 & Full-stack** | 이종훈 | 정책 퀴즈, 챗봇, 문서화 | lonlove0032@gmail.com | [@jh1126-lee](https://github.com/jh1126-lee) |
+| **Full-stack** | 이미르 | 투표 시스템, 인증, 정책 추천, Git 관리 | alfm2766@jbnu.ac.kr | [@lalala5772](https://github.com/lalala5772) |
+| **Full-stack** | 강윤진 | 커뮤니티, Storage | riveryj.kang@gmail.com | [@yunjinkang](https://github.com/yunjinkang) |
+| **Full-stack** | 김미랑 | 지도, 채팅, 문서화| codekr76@gmail.com | [@codekr76](https://github.com/codekr76) |
+| **Full-stack** | 박주혁 | 토론 클립, 관리자, DB 설계 | ksoark0109@naver.com | [@AI-hyeok](https://github.com/AI-hyeok) |
+| **Full-stack** | 이동엽 | 후보 비교, 프론트앤드 & 백앤드 배포, Git 관리 | booo7575@naver.com | [@LeeDongYup7575](https://github.com/LeeDongYup7575) |
+
+---
+
+## 📄 라이선스
+
+```bash
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+This project is licensed under the MIT License.
+```
