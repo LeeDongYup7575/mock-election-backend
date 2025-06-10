@@ -13,6 +13,100 @@
 **본 사이트는 교육 목적으로 제작된 모의 플랫폼으로, 특정 정당이나 후보를 지지하지 않습니다.**
 
 
+## 프로젝트 화면 미리보기
+
+###  메인 대시보드
+![메인 대시보드](/src/main/resources/static/assets/readme/main.jpg)
+
+---
+
+## **핵심 기능 - 선거 정보 & 투표**
+
+###  후보·정책 비교
+![후보 정책 비교](/src/main/resources/static/assets/readme/candidate-compare.jpg)
+
+###  실시간 모의투표 페이지
+![모의투표 화면](/src/main/resources/static/assets/readme/mock-voting.jpg)
+
+###  투표소 지도 
+![투표소 지도](/src/main/resources/static/assets/readme/find-polling-station.jpg)
+
+---
+
+## **소통 & 커뮤니티 기능**
+
+###  실시간 채팅
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/chat1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/chat2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">비속어 필터링 시스템</td>
+<td align="center">참가자 목록</td>
+</tr>
+</table>
+
+###  커뮤니티
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/community1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/community2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">게시글 목록형</td>
+<td align="center">게시글 카드형</td>
+</tr>
+<tr>
+<td colspan="2" align="center"><img src="/src/main/resources/static/assets/readme/community3.jpg" width="400"></td>
+</tr>
+</table>
+
+---
+
+##  **AI 지원 기능**
+
+
+###  챗봇 QnA
+![챗봇 QnA](/src/main/resources/static/assets/readme/chatbot.jpg)
+
+###  정책 단어 검색
+![정책 단어 검색](/src/main/resources/static/assets/readme/policy-terms.jpg)
+
+---
+
+## **교육 & 참여 기능**
+
+###  정책 퀴즈
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/electionQuiz1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/electionQuiz2.jpg" width="400"></td>
+</tr>
+</table>
+
+---
+
+###  관리자 페이지
+<table>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/admin1.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/admin2.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">대시보드</td>
+<td align="center">회원 관리</td>
+</tr>
+<tr>
+<td><img src="/src/main/resources/static/assets/readme/admin3.jpg" width="400"></td>
+<td><img src="/src/main/resources/static/assets/readme/admin4.jpg" width="400"></td>
+</tr>
+<tr>
+<td align="center">게시판 관리</td>
+<td align="center">신고내역</td>
+</tr>
+</table>
+
 
 ### 🎯 주요 기능
 - **후보·정책 비교**: 공약, 정책, 경력 등 항목별 후보 정보 제공
